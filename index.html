@@ -1581,10 +1581,11 @@
     <!-- PIN entry (hidden initially) -->
     <div id="pin-entry" style="display: none;">
       <div id="pin-profile-name" style="font-size: 16px; font-weight: 600; margin-bottom: 12px;"></div>
-      <input type="password" id="pin-input" placeholder="Enter PIN" maxlength="20" style="
+      <input type="text" id="pin-input" inputmode="numeric" autocomplete="off" data-1p-ignore data-lpignore="true" placeholder="Enter PIN" maxlength="20" style="
         width: 160px; padding: 10px 14px; font-family: 'DM Mono', monospace; font-size: 18px;
         border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
         color: var(--text); outline: none; margin-bottom: 8px; text-align: center; letter-spacing: 0.15em;
+        -webkit-text-security: disc;
       ">
       <div style="margin-top: 4px;">
         <button onclick="submitPin()" style="
