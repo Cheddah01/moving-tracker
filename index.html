@@ -311,6 +311,54 @@
   .priority-medium { background: var(--green-soft); color: var(--green); }
   .priority-low { background: var(--border-light); color: var(--text-tertiary); }
 
+  .task-delete-btn {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    margin-left: 4px;
+  }
+
+  .task-item:hover .task-delete-btn { opacity: 1; }
+  .task-delete-btn:hover { color: var(--accent); }
+
+  .add-task-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .add-task-input {
+    flex: 2;
+    min-width: 200px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .add-task-input:focus { border-color: var(--text); }
+
+  .add-task-select {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 8px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+  }
+
   /* ── Budget Section ── */
   .budget-summary {
     display: grid;
@@ -716,7 +764,7 @@ const API_URL = 'https://move-tracker.colbysthickey.workers.dev';
 // ── Data ──
 const MOVE_DATE = new Date('2026-07-06T00:00:00');
 
-const PHASES = [
+const DEFAULT_PHASES = [
   {
     id: 'apr', label: 'Apr', title: 'Foundations', date: 'Apr 8 – Apr 30',
     categories: [
@@ -822,6 +870,9 @@ const PHASES = [
   },
 ];
 
+let PHASES = JSON.parse(JSON.stringify(DEFAULT_PHASES));
+let taskIdCounter = 100; // for generating new task IDs
+
 // ── State ──
 let activeSection = 'tasks';
 let activePhase = 0;
@@ -875,6 +926,8 @@ function loadFromLocal() {
     if (savedBudget) budgetEntries = JSON.parse(savedBudget);
     const savedNotes = localStorage.getItem('movetracker_notes');
     if (savedNotes) notes = savedNotes;
+    const savedPhases = localStorage.getItem('movetracker_phases');
+    if (savedPhases) PHASES = JSON.parse(savedPhases);
   } catch(e) { console.log('Error loading local state', e); }
 }
 
@@ -882,6 +935,7 @@ function saveToLocal() {
   localStorage.setItem('movetracker_tasks', JSON.stringify(taskState));
   localStorage.setItem('movetracker_budget', JSON.stringify(budgetEntries));
   localStorage.setItem('movetracker_notes', notes);
+  localStorage.setItem('movetracker_phases', JSON.stringify(PHASES));
 }
 
 async function loadState() {
@@ -890,14 +944,16 @@ async function loadState() {
 
   // Then try cloud and overwrite if available
   if (useCloud && API_URL) {
-    const [cloudTasks, cloudBudget, cloudNotes] = await Promise.all([
+    const [cloudTasks, cloudBudget, cloudNotes, cloudPhases] = await Promise.all([
       cloudGet('tasks'),
       cloudGet('budget'),
       cloudGet('notes'),
+      cloudGet('phases'),
     ]);
     if (cloudTasks !== null) taskState = cloudTasks;
     if (cloudBudget !== null) budgetEntries = cloudBudget;
     if (cloudNotes !== null) notes = cloudNotes;
+    if (cloudPhases !== null) PHASES = cloudPhases;
 
     // Update local cache with cloud data
     saveToLocal();
@@ -915,6 +971,7 @@ function saveState() {
       cloudPut('tasks', taskState);
       cloudPut('budget', budgetEntries);
       cloudPut('notes', notes);
+      cloudPut('phases', PHASES);
     }
   }, 500);
 }
@@ -1057,25 +1114,80 @@ function renderPhaseContent() {
     </div>
   `;
 
-  phase.categories.forEach(cat => {
+  phase.categories.forEach((cat, catIdx) => {
     html += `<div class="category-title">${cat.name}</div>`;
-    cat.tasks.forEach(task => {
+    cat.tasks.forEach((task, taskIdx) => {
       const done = taskState[task.id] || false;
       html += `
-        <div class="task-item ${done ? 'done' : ''}" onclick="toggleTask('${task.id}')">
-          <div class="task-check">
+        <div class="task-item ${done ? 'done' : ''}">
+          <div class="task-check" onclick="toggleTask('${task.id}')">
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
               <path d="M2 5L4.2 7.5L8 2.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
-          <div class="task-text">${task.text}</div>
+          <div class="task-text" onclick="toggleTask('${task.id}')">${task.text}</div>
           <div class="task-priority priority-${task.priority}">${task.priority}</div>
+          <button class="task-delete-btn" onclick="event.stopPropagation(); removeTask(${activePhase}, ${catIdx}, ${taskIdx})">✕</button>
         </div>
       `;
     });
   });
 
+  // Add task form
+  html += `
+    <div class="add-task-area" style="margin-top: 24px;">
+      <div class="category-title">Add a task</div>
+      <div class="add-task-row">
+        <input type="text" id="new-task-text" class="add-task-input" placeholder="What needs to be done?">
+        <select id="new-task-cat" class="add-task-select">
+          ${phase.categories.map((cat, i) => `<option value="${i}">${cat.name}</option>`).join('')}
+        </select>
+        <select id="new-task-priority" class="add-task-select">
+          <option value="critical">Critical</option>
+          <option value="high" selected>High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+        <button class="btn btn-primary" onclick="addTask()">Add</button>
+      </div>
+    </div>
+  `;
+
   document.getElementById('phase-content').innerHTML = html;
+
+  // Enter key on task input
+  const taskInput = document.getElementById('new-task-text');
+  if (taskInput) {
+    taskInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') addTask();
+    });
+  }
+}
+
+function addTask() {
+  const text = document.getElementById('new-task-text').value.trim();
+  const catIdx = parseInt(document.getElementById('new-task-cat').value);
+  const priority = document.getElementById('new-task-priority').value;
+  if (!text) return;
+
+  const id = 'custom_' + (++taskIdCounter) + '_' + Date.now();
+  PHASES[activePhase].categories[catIdx].tasks.push({ id, text, priority });
+  saveState();
+  renderPhaseContent();
+  renderPhaseSelector();
+  updateOverallProgress();
+}
+
+function removeTask(phaseIdx, catIdx, taskIdx) {
+  const task = PHASES[phaseIdx].categories[catIdx].tasks[taskIdx];
+  if (!confirm(`Remove "${task.text.substring(0, 50)}..."?`)) return;
+  // Clean up task state
+  delete taskState[task.id];
+  PHASES[phaseIdx].categories[catIdx].tasks.splice(taskIdx, 1);
+  saveState();
+  renderPhaseContent();
+  renderPhaseSelector();
+  updateOverallProgress();
 }
 
 function setPhase(idx) {
