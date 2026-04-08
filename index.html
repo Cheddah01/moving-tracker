@@ -493,7 +493,34 @@
 </head>
 <body>
 
-<div class="container">
+<!-- Login Overlay -->
+<div id="login-overlay" style="
+  position: fixed; inset: 0; background: var(--bg); z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+">
+  <div style="text-align: center; max-width: 320px; padding: 20px;">
+    <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: var(--text-tertiary); text-transform: uppercase; margin-bottom: 8px;">YFB → YHZ</div>
+    <h1 style="font-size: 24px; font-weight: 700; margin-bottom: 4px; letter-spacing: -0.02em;">Move Tracker</h1>
+    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 24px;">Enter your password to sync</p>
+    <input type="password" id="login-password" placeholder="Password" style="
+      width: 100%; padding: 10px 14px; font-family: 'DM Sans', sans-serif; font-size: 14px;
+      border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
+      color: var(--text); outline: none; margin-bottom: 8px; text-align: center;
+    ">
+    <button onclick="doLogin()" style="
+      width: 100%; padding: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px;
+      font-weight: 600; background: var(--text); color: #fff; border: none;
+      border-radius: var(--radius); cursor: pointer; margin-bottom: 12px;
+    ">Unlock</button>
+    <button onclick="skipLogin()" style="
+      background: none; border: none; font-family: 'DM Sans', sans-serif; font-size: 12px;
+      color: var(--text-tertiary); cursor: pointer; text-decoration: underline;
+    ">Use offline (localStorage only)</button>
+    <div id="login-error" style="font-size: 12px; color: var(--accent); margin-top: 8px; display: none;"></div>
+  </div>
+</div>
+
+<div class="container" id="main-app" style="display: none;">
 
   <!-- Header -->
   <div class="header fade-in">
@@ -553,6 +580,11 @@
 </div>
 
 <script>
+// ══════════════════════════════════════════════
+// CONFIG — Set your Cloudflare Worker URL here
+// ══════════════════════════════════════════════
+const API_URL = ''; // e.g. 'https://move-tracker-api.YOUR_SUBDOMAIN.workers.dev'
+
 // ── Data ──
 const MOVE_DATE = new Date('2026-07-06T00:00:00');
 
@@ -668,26 +700,165 @@ let activePhase = 0;
 let taskState = {};
 let budgetEntries = [];
 let notes = '';
+let authToken = '';
+let useCloud = false;
+let saveTimeout = null;
 
-// ── Load from localStorage ──
-function loadState() {
+// ══════════════════════════════════════════════
+// STORAGE LAYER — Cloudflare KV + localStorage cache
+// ══════════════════════════════════════════════
+
+async function cloudGet(key) {
+  if (!useCloud || !API_URL) return null;
+  try {
+    const res = await fetch(`${API_URL}/${key}`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.value;
+  } catch(e) {
+    console.warn('Cloud GET failed, using local cache:', e);
+    return null;
+  }
+}
+
+async function cloudPut(key, value) {
+  if (!useCloud || !API_URL) return;
+  try {
+    await fetch(`${API_URL}/${key}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ value })
+    });
+  } catch(e) {
+    console.warn('Cloud PUT failed:', e);
+  }
+}
+
+function loadFromLocal() {
   try {
     const saved = localStorage.getItem('movetracker_tasks');
     if (saved) taskState = JSON.parse(saved);
-
     const savedBudget = localStorage.getItem('movetracker_budget');
     if (savedBudget) budgetEntries = JSON.parse(savedBudget);
-
     const savedNotes = localStorage.getItem('movetracker_notes');
     if (savedNotes) notes = savedNotes;
-  } catch(e) { console.log('Error loading state', e); }
+  } catch(e) { console.log('Error loading local state', e); }
 }
 
-function saveState() {
+function saveToLocal() {
   localStorage.setItem('movetracker_tasks', JSON.stringify(taskState));
   localStorage.setItem('movetracker_budget', JSON.stringify(budgetEntries));
   localStorage.setItem('movetracker_notes', notes);
 }
+
+async function loadState() {
+  // Always load local first for instant UI
+  loadFromLocal();
+
+  // Then try cloud and overwrite if available
+  if (useCloud && API_URL) {
+    const [cloudTasks, cloudBudget, cloudNotes] = await Promise.all([
+      cloudGet('tasks'),
+      cloudGet('budget'),
+      cloudGet('notes'),
+    ]);
+    if (cloudTasks !== null) taskState = cloudTasks;
+    if (cloudBudget !== null) budgetEntries = cloudBudget;
+    if (cloudNotes !== null) notes = cloudNotes;
+
+    // Update local cache with cloud data
+    saveToLocal();
+  }
+}
+
+function saveState() {
+  // Always save locally immediately
+  saveToLocal();
+
+  // Debounce cloud saves to avoid hammering the API
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    if (useCloud && API_URL) {
+      cloudPut('tasks', taskState);
+      cloudPut('budget', budgetEntries);
+      cloudPut('notes', notes);
+    }
+  }, 500);
+}
+
+// ══════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════
+
+async function doLogin() {
+  const pw = document.getElementById('login-password').value.trim();
+  if (!pw) return;
+
+  if (!API_URL) {
+    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('login-error').textContent = 'No API_URL configured. Set it in the script, or use offline mode.';
+    return;
+  }
+
+  // Test the token against the worker
+  try {
+    const res = await fetch(`${API_URL}/tasks`, {
+      headers: { 'Authorization': `Bearer ${pw}` }
+    });
+    if (res.status === 401) {
+      document.getElementById('login-error').style.display = 'block';
+      document.getElementById('login-error').textContent = 'Wrong password.';
+      return;
+    }
+    if (!res.ok) throw new Error('Worker error');
+
+    authToken = pw;
+    useCloud = true;
+    localStorage.setItem('movetracker_token', pw);
+    startApp();
+  } catch(e) {
+    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('login-error').textContent = 'Could not reach the API. Check your Worker URL.';
+  }
+}
+
+function skipLogin() {
+  useCloud = false;
+  startApp();
+}
+
+async function startApp() {
+  document.getElementById('login-overlay').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+
+  await loadState();
+  renderCountdown();
+  updateOverallProgress();
+  renderPhaseSelector();
+  renderPhaseContent();
+  renderBudget();
+  renderNotes();
+}
+
+// Auto-login if token is cached
+(function checkCachedToken() {
+  const cached = localStorage.getItem('movetracker_token');
+  if (cached && API_URL) {
+    authToken = cached;
+    useCloud = true;
+    startApp();
+  }
+
+  // Handle enter key on password field
+  document.getElementById('login-password').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') doLogin();
+  });
+})();
 
 // ── Countdown ──
 function renderCountdown() {
@@ -885,19 +1056,9 @@ document.getElementById('notes-area').addEventListener('input', (e) => {
   saveState();
 });
 
-// Handle enter key in budget amount
 document.getElementById('budget-amount').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') addBudgetEntry();
 });
-
-// ── Init ──
-loadState();
-renderCountdown();
-updateOverallProgress();
-renderPhaseSelector();
-renderPhaseContent();
-renderBudget();
-renderNotes();
 
 // Update countdown every minute
 setInterval(renderCountdown, 60000);
