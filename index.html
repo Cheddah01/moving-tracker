@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Move Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #fafaf9;
+    --surface: #ffffff;
+    --text: #1c1917;
+    --text-secondary: #78716c;
+    --text-tertiary: #a8a29e;
+    --border: #e7e5e4;
+    --border-light: #f5f5f4;
+    --accent: #dc2626;
+    --accent-soft: #fef2f2;
+    --green: #16a34a;
+    --green-soft: #f0fdf4;
+    --amber: #d97706;
+    --amber-soft: #fffbeb;
+    --radius: 6px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  /* ── Header ── */
+  .header {
+    margin-bottom: 48px;
+  }
+
+  .header-route {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-bottom: 4px;
+  }
+
+  .header-sub {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  /* ── Countdown ── */
+  .countdown-strip {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 48px;
+  }
+
+  .countdown-cell {
+    flex: 1;
+    background: var(--surface);
+    padding: 16px 12px;
+    text-align: center;
+  }
+
+  .countdown-cell:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+  .countdown-cell:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
+
+  .countdown-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 32px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    margin-bottom: 4px;
+  }
+
+  .countdown-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-tertiary);
+    font-weight: 500;
+  }
+
+  /* ── Progress bar ── */
+  .overall-progress {
+    margin-bottom: 48px;
+  }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+
+  .progress-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .progress-pct {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+
+  .progress-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--text);
+    border-radius: 2px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ── Nav Tabs ── */
+  .nav {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+    gap: 0;
+  }
+
+  .nav-tab {
+    background: none;
+    border: none;
+    padding: 10px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .nav-tab:hover { color: var(--text-secondary); }
+
+  .nav-tab.active {
+    color: var(--text);
+    border-bottom-color: var(--text);
+    font-weight: 600;
+  }
+
+  /* ── Sections ── */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── Phase view ── */
+  .phase-selector {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 24px;
+  }
+
+  .phase-btn {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+
+  .phase-btn:hover { border-color: var(--text-tertiary); }
+
+  .phase-btn.active {
+    background: var(--text);
+    color: #fff;
+    border-color: var(--text);
+  }
+
+  .phase-btn-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 400;
+    opacity: 0.65;
+    display: block;
+    margin-top: 2px;
+  }
+
+  .phase-header {
+    margin-bottom: 24px;
+  }
+
+  .phase-header h2 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 2px;
+  }
+
+  .phase-header-date {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .category-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+    margin-top: 24px;
+  }
+
+  .category-title:first-of-type { margin-top: 0; }
+
+  .task-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-light);
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .task-item:last-child { border-bottom: none; }
+  .task-item.done { opacity: 0.4; }
+
+  .task-check {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    border: 1.5px solid var(--border);
+    border-radius: 3px;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    background: transparent;
+  }
+
+  .task-item.done .task-check {
+    background: var(--text);
+    border-color: var(--text);
+  }
+
+  .task-check svg {
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .task-item.done .task-check svg { opacity: 1; }
+
+  .task-text {
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--text);
+    flex: 1;
+  }
+
+  .task-item.done .task-text {
+    text-decoration: line-through;
+    color: var(--text-tertiary);
+  }
+
+  .task-priority {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+
+  .priority-critical { background: var(--accent-soft); color: var(--accent); }
+  .priority-high { background: var(--amber-soft); color: var(--amber); }
+  .priority-medium { background: var(--green-soft); color: var(--green); }
+  .priority-low { background: var(--border-light); color: var(--text-tertiary); }
+
+  /* ── Budget Section ── */
+  .budget-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+
+  .budget-card {
+    background: var(--surface);
+    padding: 16px;
+  }
+
+  .budget-card-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  .budget-card-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+
+  .budget-card-value.negative { color: var(--accent); }
+  .budget-card-value.positive { color: var(--green); }
+
+  .budget-input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .budget-input-row input,
+  .budget-input-row select {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .budget-input-row input:focus,
+  .budget-input-row select:focus {
+    border-color: var(--text);
+  }
+
+  .budget-input-row input[type="text"] { flex: 2; }
+  .budget-input-row input[type="number"] { flex: 1; min-width: 0; }
+  .budget-input-row select { flex: 1; min-width: 0; }
+
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-primary {
+    background: var(--text);
+    color: #fff;
+  }
+
+  .btn-primary:hover { opacity: 0.85; }
+
+  .budget-table {
+    width: 100%;
+    font-size: 13px;
+  }
+
+  .budget-row {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-light);
+    gap: 12px;
+  }
+
+  .budget-row-desc { flex: 1; }
+  .budget-row-cat {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .budget-row-amount {
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    min-width: 80px;
+    text-align: right;
+  }
+
+  .budget-row-amount.expense { color: var(--accent); }
+  .budget-row-amount.income { color: var(--green); }
+
+  .budget-row-delete {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .budget-row:hover .budget-row-delete { opacity: 1; }
+
+  .budget-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-tertiary);
+    font-size: 13px;
+  }
+
+  /* ── Notes Section ── */
+  .notes-area {
+    width: 100%;
+    min-height: 300px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .notes-area:focus { border-color: var(--text); }
+
+  .notes-hint {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 8px;
+  }
+
+  /* ── Animations ── */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade-in {
+    animation: fadeIn 0.35s ease forwards;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 480px) {
+    .container { padding: 24px 16px 60px; }
+    .header h1 { font-size: 22px; }
+    .countdown-num { font-size: 24px; }
+    .budget-input-row { flex-wrap: wrap; }
+    .budget-input-row input, .budget-input-row select { min-width: 100%; flex: 1 1 100%; }
+    .budget-input-row .btn { width: 100%; }
+    .nav-tab { padding: 10px 10px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header fade-in">
+    <div class="header-route">YFB → YHZ</div>
+    <h1>Move Tracker</h1>
+    <div class="header-sub">Iqaluit to Halifax · July 2026</div>
+  </div>
+
+  <!-- Countdown -->
+  <div class="countdown-strip fade-in" style="animation-delay: 0.05s" id="countdown"></div>
+
+  <!-- Overall Progress -->
+  <div class="overall-progress fade-in" style="animation-delay: 0.1s">
+    <div class="progress-header">
+      <span class="progress-title">Overall progress</span>
+      <span class="progress-pct" id="overall-pct">0%</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="overall-fill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav fade-in" style="animation-delay: 0.15s">
+    <button class="nav-tab active" data-section="tasks">Tasks</button>
+    <button class="nav-tab" data-section="budget">Budget</button>
+    <button class="nav-tab" data-section="notes">Notes</button>
+  </div>
+
+  <!-- TASKS SECTION -->
+  <div class="section active" id="section-tasks">
+    <div class="phase-selector" id="phase-selector"></div>
+    <div id="phase-content"></div>
+  </div>
+
+  <!-- BUDGET SECTION -->
+  <div class="section" id="section-budget">
+    <div class="budget-summary" id="budget-summary"></div>
+    <div class="budget-input-row">
+      <input type="text" id="budget-desc" placeholder="Description">
+      <input type="number" id="budget-amount" placeholder="$" step="0.01">
+      <select id="budget-type">
+        <option value="expense">Expense</option>
+        <option value="income">Savings</option>
+      </select>
+      <button class="btn btn-primary" onclick="addBudgetEntry()">Add</button>
+    </div>
+    <div id="budget-entries"></div>
+  </div>
+
+  <!-- NOTES SECTION -->
+  <div class="section" id="section-notes">
+    <textarea class="notes-area" id="notes-area" placeholder="Apartment links, contact info, reminders, anything you want to keep track of..."></textarea>
+    <div class="notes-hint">Auto-saves as you type</div>
+  </div>
+
+</div>
+
+<script>
+// ── Data ──
+const MOVE_DATE = new Date('2026-07-06T00:00:00');
+
+const PHASES = [
+  {
+    id: 'apr', label: 'Apr', title: 'Foundations', date: 'Apr 8 – Apr 30',
+    categories: [
+      { name: 'Money', tasks: [
+        { id: 'a1', text: 'Calculate current savings and set a move fund target (~$7,000–$10,000)', priority: 'critical' },
+        { id: 'a2', text: 'Set up a dedicated savings account or earmark the amount', priority: 'high' },
+        { id: 'a3', text: 'Track all spending for 2 weeks — find what to cut until July', priority: 'high' },
+        { id: 'a4', text: 'Start selling anything you won\'t bring on Marketplace', priority: 'medium' },
+      ]},
+      { name: 'Job Search', tasks: [
+        { id: 'a5', text: 'Update resume — highlight youth programming, community work, web dev', priority: 'critical' },
+        { id: 'a6', text: 'Set up job alerts: Indeed, LinkedIn, NS Government job board', priority: 'high' },
+        { id: 'a7', text: 'Identify target sectors: youth services, non-profits, IT/web dev', priority: 'high' },
+        { id: 'a8', text: 'Start applying to remote-friendly or July-start positions', priority: 'high' },
+      ]},
+      { name: 'Housing Research', tasks: [
+        { id: 'a9', text: 'Research neighbourhoods: Dartmouth, Clayton Park, North End (more affordable)', priority: 'high' },
+        { id: 'a10', text: 'Set up alerts on Kijiji, Facebook, PadMapper, Zumper for 1-beds', priority: 'medium' },
+        { id: 'a11', text: 'Learn NS tenant rights — rent cap is 3% for existing tenants only', priority: 'medium' },
+      ]},
+      { name: 'Work', tasks: [
+        { id: 'a12', text: 'Plan your notice timeline — figure out your last day (aim late June)', priority: 'high' },
+        { id: 'a13', text: 'Check if employer owes vacation payout or severance', priority: 'medium' },
+        { id: 'a14', text: 'Start inventory: bringing vs. selling vs. shipping', priority: 'medium' },
+      ]},
+    ]
+  },
+  {
+    id: 'may', label: 'May', title: 'Lock It Down', date: 'May 1 – May 31',
+    categories: [
+      { name: 'Money', tasks: [
+        { id: 'b1', text: 'Mid-month savings check — on track? Adjust if needed', priority: 'high' },
+        { id: 'b2', text: 'Get quotes for shipping belongings (Canada Post or freight)', priority: 'medium' },
+        { id: 'b3', text: 'Budget for first/last month rent deposit ($3,200–$3,700)', priority: 'critical' },
+      ]},
+      { name: 'Job Search', tasks: [
+        { id: 'b4', text: 'Apply aggressively — 3–5 applications per week minimum', priority: 'critical' },
+        { id: 'b5', text: 'Follow up on earlier applications', priority: 'high' },
+        { id: 'b6', text: 'Network: Halifax Facebook groups, Reddit r/halifax, any contacts', priority: 'medium' },
+        { id: 'b7', text: 'Register with temp agencies as backup (Randstad, Robert Half)', priority: 'medium' },
+      ]},
+      { name: 'Housing', tasks: [
+        { id: 'b8', text: 'Narrow to 2–3 target neighbourhoods based on budget', priority: 'high' },
+        { id: 'b9', text: 'Start contacting landlords — explain July relocation, offer references', priority: 'high' },
+        { id: 'b10', text: 'Prepare rental application: ID, employment/savings proof, references', priority: 'high' },
+        { id: 'b11', text: 'Line up virtual viewings via video call', priority: 'medium' },
+      ]},
+      { name: 'Logistics', tasks: [
+        { id: 'b12', text: 'Give formal notice at work', priority: 'critical' },
+        { id: 'b13', text: 'Book flight YFB → YHZ (via Ottawa or Montreal, ~$1,000–$1,500)', priority: 'high' },
+        { id: 'b14', text: 'Decide: ship boxes vs. buy new in Halifax (often cheaper to rebuy basics)', priority: 'medium' },
+      ]},
+    ]
+  },
+  {
+    id: 'jun', label: 'Jun', title: 'Commit & Prepare', date: 'Jun 1 – Jun 30',
+    categories: [
+      { name: 'Housing', tasks: [
+        { id: 'c1', text: 'SIGN A LEASE — #1 priority for June', priority: 'critical' },
+        { id: 'c2', text: 'If no lease: line up short-term backup (Airbnb, sublet, hostel)', priority: 'high' },
+        { id: 'c3', text: 'Confirm move-in date with landlord', priority: 'high' },
+        { id: 'c4', text: 'Set up utilities: NS Power, internet (Eastlink/Bell), tenant insurance', priority: 'medium' },
+      ]},
+      { name: 'Job', tasks: [
+        { id: 'c5', text: 'Ideally have a job offer or strong leads by mid-June', priority: 'critical' },
+        { id: 'c6', text: 'If no offer: register with temp agencies, plan in-person hunt', priority: 'high' },
+        { id: 'c7', text: 'Wrap up at current job — hand off responsibilities', priority: 'high' },
+      ]},
+      { name: 'Packing & Shipping', tasks: [
+        { id: 'c8', text: 'Pack: prioritize electronics, documents, sentimental items', priority: 'high' },
+        { id: 'c9', text: 'Ship boxes 2–3 weeks before flight (Canada Post is slow from NU)', priority: 'high' },
+        { id: 'c10', text: 'Gather documents: SIN, health card, birth certificate, banking info', priority: 'critical' },
+        { id: 'c11', text: 'Cancel or redirect Iqaluit subscriptions/services', priority: 'medium' },
+      ]},
+      { name: 'Admin', tasks: [
+        { id: 'c12', text: 'Apply for Nova Scotia health card (MSI) — up to 3 month wait', priority: 'critical' },
+        { id: 'c13', text: 'Set up mail forwarding with Canada Post', priority: 'high' },
+        { id: 'c14', text: 'Update address with CRA, bank, subscriptions', priority: 'medium' },
+      ]},
+    ]
+  },
+  {
+    id: 'jul', label: 'Jul', title: 'Move & Land', date: 'July 2026',
+    categories: [
+      { name: 'Week 1: Arrive', tasks: [
+        { id: 'd1', text: 'Fly to Halifax', priority: 'critical' },
+        { id: 'd2', text: 'Pick up keys, move in', priority: 'critical' },
+        { id: 'd3', text: 'Get essentials: bedding, kitchen basics (IKEA Dartmouth, Walmart)', priority: 'high' },
+        { id: 'd4', text: 'Set up internet, make the space livable', priority: 'high' },
+      ]},
+      { name: 'Week 2: Settle', tasks: [
+        { id: 'd5', text: 'Register for NS health card in person if not done online', priority: 'high' },
+        { id: 'd6', text: 'Open or transfer to a local bank branch', priority: 'medium' },
+        { id: 'd7', text: 'If job hunting: in-person follow-ups, walk-ins, networking', priority: 'high' },
+        { id: 'd8', text: 'Explore neighbourhood — grocery, transit routes, coffee', priority: 'low' },
+      ]},
+      { name: 'First Month: Stabilize', tasks: [
+        { id: 'd9', text: 'Build a new monthly budget based on Halifax costs', priority: 'high' },
+        { id: 'd10', text: 'Build a local routine — this matters for the transition', priority: 'medium' },
+        { id: 'd11', text: 'Keep 1–2 months emergency fund intact', priority: 'critical' },
+      ]},
+    ]
+  },
+];
+
+// ── State ──
+let activeSection = 'tasks';
+let activePhase = 0;
+let taskState = {};
+let budgetEntries = [];
+let notes = '';
+
+// ── Load from localStorage ──
+function loadState() {
+  try {
+    const saved = localStorage.getItem('movetracker_tasks');
+    if (saved) taskState = JSON.parse(saved);
+
+    const savedBudget = localStorage.getItem('movetracker_budget');
+    if (savedBudget) budgetEntries = JSON.parse(savedBudget);
+
+    const savedNotes = localStorage.getItem('movetracker_notes');
+    if (savedNotes) notes = savedNotes;
+  } catch(e) { console.log('Error loading state', e); }
+}
+
+function saveState() {
+  localStorage.setItem('movetracker_tasks', JSON.stringify(taskState));
+  localStorage.setItem('movetracker_budget', JSON.stringify(budgetEntries));
+  localStorage.setItem('movetracker_notes', notes);
+}
+
+// ── Countdown ──
+function renderCountdown() {
+  const now = new Date();
+  const diff = MOVE_DATE - now;
+  const days = Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
+  const weeks = Math.floor(days / 7);
+  const remDays = days % 7;
+  const months = Math.max(0, (MOVE_DATE.getFullYear() - now.getFullYear()) * 12 + MOVE_DATE.getMonth() - now.getMonth());
+
+  document.getElementById('countdown').innerHTML = `
+    <div class="countdown-cell">
+      <div class="countdown-num">${months}</div>
+      <div class="countdown-label">Months</div>
+    </div>
+    <div class="countdown-cell">
+      <div class="countdown-num">${weeks}</div>
+      <div class="countdown-label">Weeks</div>
+    </div>
+    <div class="countdown-cell">
+      <div class="countdown-num">${remDays}</div>
+      <div class="countdown-label">Days</div>
+    </div>
+    <div class="countdown-cell">
+      <div class="countdown-num">${days}</div>
+      <div class="countdown-label">Total Days</div>
+    </div>
+  `;
+}
+
+// ── Overall Progress ──
+function updateOverallProgress() {
+  let total = 0, done = 0;
+  PHASES.forEach(phase => {
+    phase.categories.forEach(cat => {
+      cat.tasks.forEach(task => {
+        total++;
+        if (taskState[task.id]) done++;
+      });
+    });
+  });
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById('overall-pct').textContent = `${done}/${total} · ${pct}%`;
+  document.getElementById('overall-fill').style.width = `${pct}%`;
+}
+
+// ── Phase Rendering ──
+function renderPhaseSelector() {
+  const el = document.getElementById('phase-selector');
+  el.innerHTML = PHASES.map((phase, idx) => {
+    let total = 0, done = 0;
+    phase.categories.forEach(c => c.tasks.forEach(t => { total++; if (taskState[t.id]) done++; }));
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    return `<button class="phase-btn ${idx === activePhase ? 'active' : ''}" onclick="setPhase(${idx})">
+      ${phase.label}
+      <span class="phase-btn-sub">${pct}%</span>
+    </button>`;
+  }).join('');
+}
+
+function renderPhaseContent() {
+  const phase = PHASES[activePhase];
+  let html = `
+    <div class="phase-header">
+      <h2>${phase.title}</h2>
+      <div class="phase-header-date">${phase.date}</div>
+    </div>
+  `;
+
+  phase.categories.forEach(cat => {
+    html += `<div class="category-title">${cat.name}</div>`;
+    cat.tasks.forEach(task => {
+      const done = taskState[task.id] || false;
+      html += `
+        <div class="task-item ${done ? 'done' : ''}" onclick="toggleTask('${task.id}')">
+          <div class="task-check">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <path d="M2 5L4.2 7.5L8 2.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="task-text">${task.text}</div>
+          <div class="task-priority priority-${task.priority}">${task.priority}</div>
+        </div>
+      `;
+    });
+  });
+
+  document.getElementById('phase-content').innerHTML = html;
+}
+
+function setPhase(idx) {
+  activePhase = idx;
+  renderPhaseSelector();
+  renderPhaseContent();
+}
+
+function toggleTask(id) {
+  taskState[id] = !taskState[id];
+  saveState();
+  renderPhaseContent();
+  renderPhaseSelector();
+  updateOverallProgress();
+}
+
+// ── Budget ──
+function renderBudget() {
+  let totalIncome = 0, totalExpense = 0;
+  budgetEntries.forEach(e => {
+    if (e.type === 'income') totalIncome += e.amount;
+    else totalExpense += e.amount;
+  });
+
+  const target = 8500;
+  const saved = totalIncome;
+  const spent = totalExpense;
+
+  document.getElementById('budget-summary').innerHTML = `
+    <div class="budget-card">
+      <div class="budget-card-label">Saved</div>
+      <div class="budget-card-value positive">$${saved.toLocaleString('en-CA', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</div>
+    </div>
+    <div class="budget-card">
+      <div class="budget-card-label">Spent on move</div>
+      <div class="budget-card-value negative">$${spent.toLocaleString('en-CA', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</div>
+    </div>
+    <div class="budget-card">
+      <div class="budget-card-label">Net available</div>
+      <div class="budget-card-value ${(saved - spent) >= 0 ? 'positive' : 'negative'}">$${(saved - spent).toLocaleString('en-CA', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</div>
+    </div>
+    <div class="budget-card">
+      <div class="budget-card-label">Target: $${target.toLocaleString()}</div>
+      <div class="budget-card-value">${Math.min(100, Math.round((saved - spent) / target * 100))}%</div>
+    </div>
+  `;
+
+  const entriesEl = document.getElementById('budget-entries');
+  if (budgetEntries.length === 0) {
+    entriesEl.innerHTML = '<div class="budget-empty">No entries yet. Start tracking your move savings and expenses above.</div>';
+    return;
+  }
+
+  entriesEl.innerHTML = [...budgetEntries].reverse().map((entry, idx) => {
+    const realIdx = budgetEntries.length - 1 - idx;
+    return `<div class="budget-row">
+      <div class="budget-row-desc">${entry.desc}</div>
+      <div class="budget-row-cat">${entry.type === 'income' ? 'savings' : 'expense'}</div>
+      <div class="budget-row-amount ${entry.type === 'income' ? 'income' : 'expense'}">
+        ${entry.type === 'income' ? '+' : '-'}$${entry.amount.toLocaleString('en-CA', {minimumFractionDigits: 0, maximumFractionDigits: 2})}
+      </div>
+      <button class="budget-row-delete" onclick="deleteBudgetEntry(${realIdx})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function addBudgetEntry() {
+  const desc = document.getElementById('budget-desc').value.trim();
+  const amount = parseFloat(document.getElementById('budget-amount').value);
+  const type = document.getElementById('budget-type').value;
+
+  if (!desc || isNaN(amount) || amount <= 0) return;
+
+  budgetEntries.push({ desc, amount, type, date: new Date().toISOString() });
+  saveState();
+  renderBudget();
+
+  document.getElementById('budget-desc').value = '';
+  document.getElementById('budget-amount').value = '';
+}
+
+function deleteBudgetEntry(idx) {
+  budgetEntries.splice(idx, 1);
+  saveState();
+  renderBudget();
+}
+
+// ── Notes ──
+function renderNotes() {
+  document.getElementById('notes-area').value = notes;
+}
+
+// ── Navigation ──
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const section = tab.dataset.section;
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById(`section-${section}`).classList.add('active');
+    activeSection = section;
+  });
+});
+
+document.getElementById('notes-area').addEventListener('input', (e) => {
+  notes = e.target.value;
+  saveState();
+});
+
+// Handle enter key in budget amount
+document.getElementById('budget-amount').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') addBudgetEntry();
+});
+
+// ── Init ──
+loadState();
+renderCountdown();
+updateOverallProgress();
+renderPhaseSelector();
+renderPhaseContent();
+renderBudget();
+renderNotes();
+
+// Update countdown every minute
+setInterval(renderCountdown, 60000);
+</script>
+
+</body>
+</html>
