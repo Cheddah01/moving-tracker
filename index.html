@@ -469,6 +469,117 @@
     margin-top: 8px;
   }
 
+  /* ── Feed Section ── */
+  .feed-input-area {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .feed-name-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .feed-name-input {
+    flex: 1;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .feed-name-input:focus { border-color: var(--text); }
+
+  .feed-msg-input {
+    flex: 1;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+    min-width: 0;
+  }
+
+  .feed-msg-input:focus { border-color: var(--text); }
+
+  .feed-item {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .feed-item:last-child { border-bottom: none; }
+
+  .feed-item-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 3px;
+  }
+
+  .feed-item-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .feed-item-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text-tertiary);
+  }
+
+  .feed-item-msg {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+  }
+
+  .feed-item-delete {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    margin-left: auto;
+  }
+
+  .feed-item:hover .feed-item-delete { opacity: 1; }
+
+  .feed-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-tertiary);
+    font-size: 13px;
+  }
+
+  .feed-refresh-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 6px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .feed-refresh-btn:hover { border-color: var(--text-tertiary); color: var(--text-secondary); }
+
   /* ── Animations ── */
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(6px); }
@@ -547,6 +658,7 @@
   <div class="nav fade-in" style="animation-delay: 0.15s">
     <button class="nav-tab active" data-section="tasks">Tasks</button>
     <button class="nav-tab" data-section="budget">Budget</button>
+    <button class="nav-tab" data-section="feed">Feed</button>
     <button class="nav-tab" data-section="notes">Notes</button>
   </div>
 
@@ -569,6 +681,22 @@
       <button class="btn btn-primary" onclick="addBudgetEntry()">Add</button>
     </div>
     <div id="budget-entries"></div>
+  </div>
+
+  <!-- FEED SECTION -->
+  <div class="section" id="section-feed">
+    <div class="feed-name-row">
+      <input type="text" id="feed-name" class="feed-name-input" placeholder="Your name" maxlength="30">
+    </div>
+    <div class="feed-input-area">
+      <input type="text" id="feed-msg" class="feed-msg-input" placeholder="Share a link, suggestion, or update...">
+      <button class="btn btn-primary" onclick="addFeedPost()">Post</button>
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <div style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-tertiary);">Recent</div>
+      <button class="feed-refresh-btn" onclick="loadFeed()">Refresh</button>
+    </div>
+    <div id="feed-posts"></div>
   </div>
 
   <!-- NOTES SECTION -->
@@ -843,6 +971,7 @@ async function startApp() {
   renderPhaseContent();
   renderBudget();
   renderNotes();
+  loadFeed();
 }
 
 // Auto-login if token is cached
@@ -1034,6 +1163,87 @@ function deleteBudgetEntry(idx) {
   renderBudget();
 }
 
+// ── Feed ──
+let feedPosts = [];
+
+async function loadFeed() {
+  if (useCloud && API_URL) {
+    const cloudFeed = await cloudGet('feed');
+    if (cloudFeed !== null) feedPosts = cloudFeed;
+  } else {
+    try {
+      const saved = localStorage.getItem('movetracker_feed');
+      if (saved) feedPosts = JSON.parse(saved);
+    } catch(e) {}
+  }
+  renderFeed();
+}
+
+function saveFeed() {
+  localStorage.setItem('movetracker_feed', JSON.stringify(feedPosts));
+  if (useCloud && API_URL) {
+    cloudPut('feed', feedPosts);
+  }
+}
+
+function renderFeed() {
+  const el = document.getElementById('feed-posts');
+  if (feedPosts.length === 0) {
+    el.innerHTML = '<div class="feed-empty">No posts yet. Share updates, links, or suggestions for the move.</div>';
+    return;
+  }
+
+  el.innerHTML = [...feedPosts].reverse().map((post, idx) => {
+    const realIdx = feedPosts.length - 1 - idx;
+    const date = new Date(post.date);
+    const timeStr = date.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }) + ' · ' + date.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' });
+    // Basic XSS protection
+    const safeName = (post.name || 'Anonymous').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const safeMsg = (post.msg || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // Auto-link URLs
+    const linkedMsg = safeMsg.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener" style="color: var(--accent); text-decoration: underline;">$1</a>');
+
+    return `<div class="feed-item">
+      <div class="feed-item-header">
+        <div class="feed-item-name">${safeName}</div>
+        <div class="feed-item-time">${timeStr}</div>
+        <button class="feed-item-delete" onclick="deleteFeedPost(${realIdx})">✕</button>
+      </div>
+      <div class="feed-item-msg">${linkedMsg}</div>
+    </div>`;
+  }).join('');
+}
+
+function addFeedPost() {
+  const name = document.getElementById('feed-name').value.trim();
+  const msg = document.getElementById('feed-msg').value.trim();
+  if (!msg) return;
+
+  feedPosts.push({
+    name: name || 'Anonymous',
+    msg,
+    date: new Date().toISOString()
+  });
+  saveFeed();
+  renderFeed();
+
+  // Save the name for next time
+  localStorage.setItem('movetracker_feedname', name);
+  document.getElementById('feed-msg').value = '';
+}
+
+function deleteFeedPost(idx) {
+  feedPosts.splice(idx, 1);
+  saveFeed();
+  renderFeed();
+}
+
+// Restore saved name
+(function restoreFeedName() {
+  const saved = localStorage.getItem('movetracker_feedname');
+  if (saved) document.getElementById('feed-name').value = saved;
+})();
+
 // ── Notes ──
 function renderNotes() {
   document.getElementById('notes-area').value = notes;
@@ -1058,6 +1268,10 @@ document.getElementById('notes-area').addEventListener('input', (e) => {
 
 document.getElementById('budget-amount').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') addBudgetEntry();
+});
+
+document.getElementById('feed-msg').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') addFeedPost();
 });
 
 // Update countdown every minute
