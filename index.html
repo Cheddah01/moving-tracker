@@ -819,6 +819,209 @@
     padding: 4px 0;
   }
 
+  /* ── Budget Sub-tabs & Calculators ── */
+  .budget-subnav {
+    display: flex;
+    gap: 0;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .budget-tab {
+    flex: 1;
+    background: var(--surface);
+    border: none;
+    padding: 9px 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: all 0.15s;
+    border-right: 1px solid var(--border);
+  }
+
+  .budget-tab:last-child { border-right: none; }
+  .budget-tab:hover { color: var(--text-secondary); }
+
+  .budget-tab.active {
+    background: var(--text);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .budget-panel { display: none; }
+  .budget-panel.active { display: block; }
+
+  .calc-description {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  .calc-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .calc-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .calc-row label {
+    font-size: 13px;
+    color: var(--text);
+    flex: 1;
+    min-width: 0;
+  }
+
+  .calc-input-wrap {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+
+  .calc-input-wrap:focus-within { border-color: var(--text); }
+
+  .calc-dollar {
+    padding: 0 8px;
+    font-size: 13px;
+    color: var(--text-tertiary);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .calc-input {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    padding: 7px 10px 7px 0;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    outline: none;
+    width: 100px;
+    text-align: right;
+  }
+
+  .calc-select {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+  }
+
+  .calc-total-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    background: var(--text);
+    color: #fff;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .calc-total-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 20px;
+    font-weight: 500;
+  }
+
+  .calc-note {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: var(--amber-soft);
+    border-radius: var(--radius);
+    line-height: 1.5;
+  }
+
+  .calc-note:empty { display: none; }
+
+  .pc-breakdown {
+    margin-top: 4px;
+  }
+
+  .pc-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 13px;
+  }
+
+  .pc-row:last-child { border-bottom: none; }
+
+  .pc-row-label { color: var(--text-secondary); }
+
+  .pc-row-value {
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+  }
+
+  .pc-row-value.deduction { color: var(--accent); }
+  .pc-row-value.income { color: var(--green); }
+
+  .pc-row.pc-total {
+    border-top: 2px solid var(--text);
+    border-bottom: none;
+    padding-top: 12px;
+    margin-top: 4px;
+    font-weight: 600;
+  }
+
+  .pc-row.pc-total .pc-row-value {
+    font-size: 18px;
+    color: var(--green);
+  }
+
+  .pc-weekly-summary {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: var(--green-soft);
+    border-radius: var(--radius);
+  }
+
+  .pc-weekly-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    text-align: center;
+  }
+
+  .pc-weekly-item-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    margin-bottom: 2px;
+  }
+
+  .pc-weekly-item-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--green);
+  }
+
   /* ── Animations ── */
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(6px); }
@@ -941,17 +1144,100 @@
 
   <!-- BUDGET SECTION -->
   <div class="section" id="section-budget">
-    <div class="budget-summary" id="budget-summary"></div>
-    <div class="budget-input-row">
-      <input type="text" id="budget-desc" placeholder="Description">
-      <input type="number" id="budget-amount" placeholder="$" step="0.01">
-      <select id="budget-type">
-        <option value="expense">Expense</option>
-        <option value="income">Savings</option>
-      </select>
-      <button class="btn btn-primary" onclick="addBudgetEntry()">Add</button>
+
+    <!-- Budget sub-nav -->
+    <div class="budget-subnav">
+      <button class="budget-tab active" data-btab="tracker" onclick="switchBudgetTab('tracker')">Tracker</button>
+      <button class="budget-tab" data-btab="movecost" onclick="switchBudgetTab('movecost')">Move Cost</button>
+      <button class="budget-tab" data-btab="paycheck" onclick="switchBudgetTab('paycheck')">Paycheck</button>
     </div>
-    <div id="budget-entries"></div>
+
+    <!-- TRACKER TAB -->
+    <div class="budget-panel active" id="btab-tracker">
+      <div class="budget-summary" id="budget-summary"></div>
+      <div class="budget-input-row">
+        <input type="text" id="budget-desc" placeholder="Description">
+        <input type="number" id="budget-amount" placeholder="$" step="0.01">
+        <select id="budget-type">
+          <option value="expense">Expense</option>
+          <option value="income">Savings</option>
+        </select>
+        <button class="btn btn-primary" onclick="addBudgetEntry()">Add</button>
+      </div>
+      <div id="budget-entries"></div>
+    </div>
+
+    <!-- MOVE COST ESTIMATOR TAB -->
+    <div class="budget-panel" id="btab-movecost">
+      <div class="calc-description">Estimate the total cost of your move. Adjust any field and the total updates automatically.</div>
+      <div class="calc-grid" id="movecost-grid">
+        <div class="calc-row">
+          <label>Flight (YFB → YHZ one-way)</label>
+          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input" id="mc-flight" value="1200"></div>
+        </div>
+        <div class="calc-row">
+          <label>First month rent</label>
+          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input" id="mc-rent1" value="1750"></div>
+        </div>
+        <div class="calc-row">
+          <label>Last month rent (deposit)</label>
+          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input" id="mc-rentlast" value="1750"></div>
+        </div>
+        <div class="calc-row">
+          <label>Shipping / moving supplies</label>
+          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input" id="mc-shipping" value="350"></div>
+        </div>
+        <div class="calc-row">
+          <label>Apartment setup (bed, kitchen, basics)</label>
+          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input" id="mc-setup" value="600"></div>
+        </div>
+        <div class="calc-row">
+          <label>First month groceries & transit</label>
+          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input" id="mc-living" value="500"></div>
+        </div>
+        <div class="calc-row">
+          <label>Tenant insurance (annual)</label>
+          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input" id="mc-insurance" value="300"></div>
+        </div>
+        <div class="calc-row">
+          <label>Emergency buffer</label>
+          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input" id="mc-buffer" value="2500"></div>
+        </div>
+      </div>
+      <div class="calc-total-bar">
+        <span>Total estimated move cost</span>
+        <span class="calc-total-value" id="mc-total">$0</span>
+      </div>
+      <div class="calc-note" id="mc-weekly-note"></div>
+    </div>
+
+    <!-- PAYCHECK CALCULATOR TAB -->
+    <div class="budget-panel" id="btab-paycheck">
+      <div class="calc-description">See your estimated take-home pay in Nova Scotia for 2026. Enter an annual salary or hourly rate.</div>
+      <div class="calc-grid">
+        <div class="calc-row">
+          <label>Pay type</label>
+          <select class="calc-select" id="pc-type" onchange="calcPaycheck()">
+            <option value="annual">Annual salary</option>
+            <option value="hourly">Hourly rate</option>
+          </select>
+        </div>
+        <div class="calc-row" id="pc-salary-row">
+          <label>Annual salary</label>
+          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input" id="pc-salary" value="45000" oninput="calcPaycheck()"></div>
+        </div>
+        <div class="calc-row" id="pc-hourly-row" style="display:none;">
+          <label>Hourly rate</label>
+          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input" id="pc-hourly" value="22" oninput="calcPaycheck()"></div>
+        </div>
+        <div class="calc-row" id="pc-hours-row" style="display:none;">
+          <label>Hours per week</label>
+          <input type="number" class="calc-input" id="pc-hours" value="40" style="max-width:100px;" oninput="calcPaycheck()">
+        </div>
+      </div>
+      <div id="pc-results"></div>
+    </div>
+
   </div>
 
   <!-- FEED SECTION -->
@@ -1619,6 +1905,176 @@ function deleteBudgetEntry(idx) {
   budgetEntries.splice(idx, 1);
   saveState();
   renderBudget();
+}
+
+// ── Budget Sub-tabs ──
+function switchBudgetTab(tab) {
+  document.querySelectorAll('.budget-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.budget-tab[data-btab="${tab}"]`).classList.add('active');
+  document.querySelectorAll('.budget-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`btab-${tab}`).classList.add('active');
+
+  if (tab === 'movecost') calcMoveCost();
+  if (tab === 'paycheck') calcPaycheck();
+}
+
+// ── Move Cost Estimator ──
+function calcMoveCost() {
+  const ids = ['mc-flight','mc-rent1','mc-rentlast','mc-shipping','mc-setup','mc-living','mc-insurance','mc-buffer'];
+  let total = 0;
+  ids.forEach(id => {
+    const val = parseFloat(document.getElementById(id)?.value) || 0;
+    total += val;
+  });
+
+  document.getElementById('mc-total').textContent = '$' + total.toLocaleString('en-CA', { maximumFractionDigits: 0 });
+
+  // Weeks until July 6
+  const now = new Date();
+  const moveDate = new Date('2026-07-06');
+  const weeksLeft = Math.max(1, Math.ceil((moveDate - now) / (7 * 24 * 60 * 60 * 1000)));
+  const perWeek = Math.ceil(total / weeksLeft);
+
+  document.getElementById('mc-weekly-note').textContent =
+    `With ${weeksLeft} weeks until move day, you'd need to save about $${perWeek.toLocaleString('en-CA')}/week to cover this. Adjust the numbers above to match your situation.`;
+}
+
+// Attach input listeners for move cost
+document.getElementById('movecost-grid')?.addEventListener('input', calcMoveCost);
+
+// ── Paycheck Calculator (NS 2026) ──
+function calcPaycheck() {
+  const payType = document.getElementById('pc-type').value;
+
+  // Toggle hourly/salary rows
+  document.getElementById('pc-salary-row').style.display = payType === 'annual' ? 'flex' : 'none';
+  document.getElementById('pc-hourly-row').style.display = payType === 'hourly' ? 'flex' : 'none';
+  document.getElementById('pc-hours-row').style.display = payType === 'hourly' ? 'flex' : 'none';
+
+  let annual;
+  if (payType === 'hourly') {
+    const rate = parseFloat(document.getElementById('pc-hourly').value) || 0;
+    const hours = parseFloat(document.getElementById('pc-hours').value) || 40;
+    annual = rate * hours * 52;
+  } else {
+    annual = parseFloat(document.getElementById('pc-salary').value) || 0;
+  }
+
+  if (annual <= 0) {
+    document.getElementById('pc-results').innerHTML = '';
+    return;
+  }
+
+  // 2026 Federal tax brackets (with 14% lowest rate effective July 1 2025)
+  const fedBPA = 15705;
+  const fedBrackets = [
+    { limit: 58523, rate: 0.14 },    // lowest bracket reduced to 14% from 15%
+    { limit: 117045, rate: 0.205 },
+    { limit: 181440, rate: 0.26 },
+    { limit: 258482, rate: 0.29 },
+    { limit: Infinity, rate: 0.33 },
+  ];
+
+  // 2026 Nova Scotia tax brackets
+  const nsBPA = 11932;
+  const nsBrackets = [
+    { limit: 30995, rate: 0.0879 },
+    { limit: 61991, rate: 0.1495 },
+    { limit: 97417, rate: 0.1667 },
+    { limit: 157124, rate: 0.175 },
+    { limit: Infinity, rate: 0.21 },
+  ];
+
+  function calcBracketTax(taxable, brackets) {
+    let tax = 0;
+    let prev = 0;
+    for (const b of brackets) {
+      if (taxable <= prev) break;
+      const portion = Math.min(taxable, b.limit) - prev;
+      tax += portion * b.rate;
+      prev = b.limit;
+    }
+    return Math.max(0, tax);
+  }
+
+  const fedTaxable = Math.max(0, annual - fedBPA);
+  const fedTax = calcBracketTax(annual, fedBrackets) - (fedBPA * 0.14);
+  const fedTaxFinal = Math.max(0, fedTax);
+
+  const nsTaxable = Math.max(0, annual - nsBPA);
+  const nsTax = calcBracketTax(annual, nsBrackets) - (nsBPA * 0.0879);
+  const nsTaxFinal = Math.max(0, nsTax);
+
+  // CPP 2026: 5.95% on earnings $3,500 to $68,500
+  const cppRate = 0.0595;
+  const cppExempt = 3500;
+  const cppMax = 68500;
+  const cppMaxContrib = 3867.50;
+  const cppEarnings = Math.min(Math.max(0, annual - cppExempt), cppMax - cppExempt);
+  const cpp = Math.min(cppEarnings * cppRate, cppMaxContrib);
+
+  // EI 2026: 1.66% on insurable earnings up to ~$65,700
+  const eiRate = 0.0166;
+  const eiMaxEarnings = 65700;
+  const eiMaxPremium = 1090.62;
+  const ei = Math.min(Math.min(annual, eiMaxEarnings) * eiRate, eiMaxPremium);
+
+  const totalDeductions = fedTaxFinal + nsTaxFinal + cpp + ei;
+  const netAnnual = annual - totalDeductions;
+  const netMonthly = netAnnual / 12;
+  const netBiweekly = netAnnual / 26;
+  const netWeekly = netAnnual / 52;
+
+  const fmt = (n) => '$' + Math.round(n).toLocaleString('en-CA');
+  const fmtDec = (n) => '$' + n.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  document.getElementById('pc-results').innerHTML = `
+    <div class="pc-breakdown">
+      <div class="pc-row">
+        <span class="pc-row-label">Gross annual income</span>
+        <span class="pc-row-value">${fmt(annual)}</span>
+      </div>
+      <div class="pc-row">
+        <span class="pc-row-label">Federal income tax</span>
+        <span class="pc-row-value deduction">-${fmt(fedTaxFinal)}</span>
+      </div>
+      <div class="pc-row">
+        <span class="pc-row-label">Nova Scotia income tax</span>
+        <span class="pc-row-value deduction">-${fmt(nsTaxFinal)}</span>
+      </div>
+      <div class="pc-row">
+        <span class="pc-row-label">CPP contributions</span>
+        <span class="pc-row-value deduction">-${fmt(cpp)}</span>
+      </div>
+      <div class="pc-row">
+        <span class="pc-row-label">EI premiums</span>
+        <span class="pc-row-value deduction">-${fmt(ei)}</span>
+      </div>
+      <div class="pc-row pc-total">
+        <span class="pc-row-label">Net annual take-home</span>
+        <span class="pc-row-value income">${fmt(netAnnual)}</span>
+      </div>
+    </div>
+    <div class="pc-weekly-summary">
+      <div class="pc-weekly-grid">
+        <div>
+          <div class="pc-weekly-item-label">Monthly</div>
+          <div class="pc-weekly-item-value">${fmt(netMonthly)}</div>
+        </div>
+        <div>
+          <div class="pc-weekly-item-label">Bi-weekly</div>
+          <div class="pc-weekly-item-value">${fmt(netBiweekly)}</div>
+        </div>
+        <div>
+          <div class="pc-weekly-item-label">Weekly</div>
+          <div class="pc-weekly-item-value">${fmt(netWeekly)}</div>
+        </div>
+      </div>
+    </div>
+    <div class="calc-note" style="margin-top: 10px;">
+      This is an estimate based on 2026 NS and federal tax brackets. Doesn't include CPP2, RRSP deductions, or other credits. Actual take-home may vary slightly.
+    </div>
+  `;
 }
 
 // ── Milestones ──
