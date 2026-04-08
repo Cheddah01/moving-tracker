@@ -1382,6 +1382,159 @@
     font-size: 13px;
   }
 
+  /* ── Profile Picker ── */
+  .profile-grid {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+
+  .profile-card {
+    cursor: pointer;
+    text-align: center;
+    padding: 16px 12px;
+    border-radius: var(--radius);
+    border: 2px solid transparent;
+    transition: all 0.15s;
+    width: 80px;
+  }
+
+  .profile-card:hover { border-color: var(--border); background: var(--surface); }
+
+  .profile-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    margin: 0 auto 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .profile-card-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .profile-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    position: relative;
+  }
+
+  .profile-badge-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .profile-badge-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .profile-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    min-width: 160px;
+    z-index: 50;
+    overflow: hidden;
+  }
+
+  .profile-menu.open { display: block; }
+
+  .profile-menu-item {
+    display: block;
+    width: 100%;
+    padding: 10px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+
+  .profile-menu-item:hover { background: var(--border-light); }
+  .profile-menu-item.danger { color: var(--accent); }
+
+  /* ── PIN Settings Modal ── */
+  .pin-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pin-modal {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 24px;
+    max-width: 320px;
+    width: 90%;
+    text-align: center;
+  }
+
+  .pin-modal h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .pin-modal p {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+  }
+
+  .pin-modal input {
+    width: 140px;
+    padding: 8px 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    text-align: center;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+  }
+
+  .pin-modal input:focus { border-color: var(--text); }
+
   /* ── Animations ── */
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(6px); }
@@ -1417,25 +1570,41 @@
   position: fixed; inset: 0; background: var(--bg); z-index: 100;
   display: flex; align-items: center; justify-content: center;
 ">
-  <div style="text-align: center; max-width: 320px; padding: 20px;">
+  <div style="text-align: center; max-width: 400px; padding: 20px; width: 100%;">
     <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: var(--text-tertiary); text-transform: uppercase; margin-bottom: 8px;">YFB → YHZ</div>
     <h1 style="font-size: 24px; font-weight: 700; margin-bottom: 4px; letter-spacing: -0.02em;">Move Tracker</h1>
-    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 24px;">Enter your password to sync</p>
-    <input type="password" id="login-password" placeholder="Password" style="
-      width: 100%; padding: 10px 14px; font-family: 'DM Sans', sans-serif; font-size: 14px;
-      border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
-      color: var(--text); outline: none; margin-bottom: 8px; text-align: center;
-    ">
-    <button onclick="doLogin()" style="
-      width: 100%; padding: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px;
-      font-weight: 600; background: var(--text); color: #fff; border: none;
-      border-radius: var(--radius); cursor: pointer; margin-bottom: 12px;
-    ">Unlock</button>
+    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 28px;">Who's checking in?</p>
+
+    <!-- Profile picker -->
+    <div id="profile-picker" class="profile-grid"></div>
+
+    <!-- PIN entry (hidden initially) -->
+    <div id="pin-entry" style="display: none;">
+      <div id="pin-profile-name" style="font-size: 16px; font-weight: 600; margin-bottom: 12px;"></div>
+      <input type="password" id="pin-input" placeholder="Enter PIN" maxlength="20" style="
+        width: 160px; padding: 10px 14px; font-family: 'DM Mono', monospace; font-size: 18px;
+        border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
+        color: var(--text); outline: none; margin-bottom: 8px; text-align: center; letter-spacing: 0.15em;
+      ">
+      <div style="margin-top: 4px;">
+        <button onclick="submitPin()" style="
+          padding: 10px 32px; font-family: 'DM Sans', sans-serif; font-size: 13px;
+          font-weight: 600; background: var(--text); color: #fff; border: none;
+          border-radius: var(--radius); cursor: pointer;
+        ">Go</button>
+      </div>
+      <button onclick="backToProfiles()" style="
+        background: none; border: none; font-family: 'DM Sans', sans-serif; font-size: 12px;
+        color: var(--text-tertiary); cursor: pointer; text-decoration: underline; margin-top: 10px;
+      ">Back</button>
+      <div id="pin-error" style="font-size: 12px; color: var(--accent); margin-top: 8px; display: none;"></div>
+    </div>
+
+    <!-- Offline option -->
     <button onclick="skipLogin()" style="
-      background: none; border: none; font-family: 'DM Sans', sans-serif; font-size: 12px;
-      color: var(--text-tertiary); cursor: pointer; text-decoration: underline;
-    ">Use offline (localStorage only)</button>
-    <div id="login-error" style="font-size: 12px; color: var(--accent); margin-top: 8px; display: none;"></div>
+      background: none; border: none; font-family: 'DM Sans', sans-serif; font-size: 11px;
+      color: var(--text-tertiary); cursor: pointer; text-decoration: underline; margin-top: 20px; display: block; margin-left: auto; margin-right: auto;
+    ">Use offline</button>
   </div>
 </div>
 
@@ -1443,9 +1612,14 @@
 
   <!-- Header -->
   <div class="header fade-in">
-    <div class="header-route">YFB → YHZ</div>
-    <h1>Move Tracker</h1>
-    <div class="header-sub">Iqaluit to Halifax · July 2026</div>
+    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+      <div>
+        <div class="header-route">YFB → YHZ</div>
+        <h1>Move Tracker</h1>
+        <div class="header-sub">Iqaluit to Halifax · July 2026</div>
+      </div>
+      <div class="profile-badge" id="profile-badge"></div>
+    </div>
   </div>
 
   <!-- Milestones -->
@@ -1866,43 +2040,139 @@ function saveState() {
 }
 
 // ══════════════════════════════════════════════
-// LOGIN
+// PROFILES & LOGIN
 // ══════════════════════════════════════════════
 
-async function doLogin() {
-  const pw = document.getElementById('login-password').value.trim();
-  if (!pw) return;
+const PROFILES = [
+  { id: 'colby', name: 'Colby', color: '#2563eb', initials: 'C', isAdmin: true },
+  { id: 'mom', name: 'Mom', color: '#7c3aed', initials: 'M', isAdmin: false },
+  { id: 'dad', name: 'Dad', color: '#059669', initials: 'D', isAdmin: false },
+  { id: 'hayden', name: 'Hayden', color: '#dc2626', initials: 'H', isAdmin: false },
+];
 
-  if (!API_URL) {
-    document.getElementById('login-error').style.display = 'block';
-    document.getElementById('login-error').textContent = 'No API_URL configured. Set it in the script, or use offline mode.';
+// Default PINs — these get overwritten once saved to KV
+const DEFAULT_PINS = { colby: '1234', mom: '1234', dad: '1234', hayden: '1234' };
+
+let currentProfile = null;
+let profilePins = null;
+
+function renderProfilePicker() {
+  const el = document.getElementById('profile-picker');
+  el.innerHTML = PROFILES.map(p => `
+    <div class="profile-card" onclick="selectProfile('${p.id}')">
+      <div class="profile-avatar" style="background: ${p.color};">${p.initials}</div>
+      <div class="profile-card-name">${p.name}</div>
+    </div>
+  `).join('');
+}
+
+let selectedProfileId = null;
+
+function selectProfile(id) {
+  selectedProfileId = id;
+  const profile = PROFILES.find(p => p.id === id);
+  document.getElementById('profile-picker').style.display = 'none';
+  document.getElementById('pin-entry').style.display = 'block';
+  document.getElementById('pin-profile-name').textContent = profile.name;
+  document.getElementById('pin-error').style.display = 'none';
+
+  const pinInput = document.getElementById('pin-input');
+  pinInput.value = '';
+  setTimeout(() => pinInput.focus(), 100);
+}
+
+function backToProfiles() {
+  document.getElementById('profile-picker').style.display = 'flex';
+  document.getElementById('pin-entry').style.display = 'none';
+  selectedProfileId = null;
+}
+
+async function loadPins() {
+  // Try cloud first
+  if (API_URL) {
+    try {
+      authToken = localStorage.getItem('movetracker_token') || '';
+      if (authToken) {
+        const cloud = await cloudGet('pins');
+        if (cloud !== null) {
+          profilePins = cloud;
+          return;
+        }
+      }
+    } catch(e) {}
+  }
+
+  // Fall back to local
+  try {
+    const saved = localStorage.getItem('movetracker_pins');
+    if (saved) { profilePins = JSON.parse(saved); return; }
+  } catch(e) {}
+
+  profilePins = { ...DEFAULT_PINS };
+}
+
+function savePins() {
+  localStorage.setItem('movetracker_pins', JSON.stringify(profilePins));
+  if (useCloud && API_URL) cloudPut('pins', profilePins);
+}
+
+async function submitPin() {
+  const pin = document.getElementById('pin-input').value.trim();
+  if (!pin) return;
+
+  // Load pins if not loaded
+  if (!profilePins) await loadPins();
+
+  // First-time setup: also authenticate with the Worker
+  if (API_URL && !useCloud) {
+    // The PIN for the master token is stored separately
+    const masterToken = localStorage.getItem('movetracker_token');
+    if (masterToken) {
+      authToken = masterToken;
+      useCloud = true;
+      // Reload pins from cloud now that we're authed
+      const cloud = await cloudGet('pins');
+      if (cloud !== null) profilePins = cloud;
+    }
+  }
+
+  // Validate PIN
+  const correctPin = profilePins[selectedProfileId];
+  if (correctPin && pin !== correctPin) {
+    document.getElementById('pin-error').style.display = 'block';
+    document.getElementById('pin-error').textContent = 'Wrong PIN.';
+    document.getElementById('pin-input').value = '';
+    document.getElementById('pin-input').focus();
     return;
   }
 
-  // Test the token against the worker
-  try {
-    const res = await fetch(`${API_URL}/tasks`, {
-      headers: { 'Authorization': `Bearer ${pw}` }
-    });
-    if (res.status === 401) {
-      document.getElementById('login-error').style.display = 'block';
-      document.getElementById('login-error').textContent = 'Wrong password.';
-      return;
-    }
-    if (!res.ok) throw new Error('Worker error');
+  currentProfile = PROFILES.find(p => p.id === selectedProfileId);
+  localStorage.setItem('movetracker_activeprofile', selectedProfileId);
+  startApp();
+}
 
-    authToken = pw;
-    useCloud = true;
-    localStorage.setItem('movetracker_token', pw);
-    startApp();
-  } catch(e) {
-    document.getElementById('login-error').style.display = 'block';
-    document.getElementById('login-error').textContent = 'Could not reach the API. Check your Worker URL.';
+async function doFirstTimeSetup() {
+  // If we don't have a master token yet, prompt for it once
+  if (API_URL && !localStorage.getItem('movetracker_token')) {
+    const token = prompt('First-time setup: enter the Worker password to enable cloud sync.\n(This is the AUTH_TOKEN you set in Cloudflare.)');
+    if (token) {
+      try {
+        const res = await fetch(`${API_URL}/tasks`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok || res.status !== 401) {
+          authToken = token;
+          useCloud = true;
+          localStorage.setItem('movetracker_token', token);
+        }
+      } catch(e) {}
+    }
   }
 }
 
 function skipLogin() {
   useCloud = false;
+  currentProfile = { id: 'colby', name: 'Colby', color: '#2563eb', initials: 'C', isAdmin: true };
   startApp();
 }
 
@@ -1910,6 +2180,7 @@ async function startApp() {
   document.getElementById('login-overlay').style.display = 'none';
   document.getElementById('main-app').style.display = 'block';
 
+  renderProfileBadge();
   await loadState();
   renderCountdown();
   updateOverallProgress();
@@ -1924,18 +2195,119 @@ async function startApp() {
   loadJobs();
 }
 
-// Auto-login if token is cached
-(function checkCachedToken() {
-  const cached = localStorage.getItem('movetracker_token');
-  if (cached && API_URL) {
-    authToken = cached;
+function renderProfileBadge() {
+  if (!currentProfile) return;
+  const el = document.getElementById('profile-badge');
+  el.innerHTML = `
+    <div class="profile-badge-avatar" style="background: ${currentProfile.color};">${currentProfile.initials}</div>
+    <div class="profile-badge-name">${currentProfile.name}</div>
+    <div class="profile-menu" id="profile-menu">
+      ${currentProfile.isAdmin ? '<button class="profile-menu-item" onclick="openPinSettings()">Change PINs</button>' : ''}
+      <button class="profile-menu-item" onclick="switchProfile()">Switch Profile</button>
+      <button class="profile-menu-item danger" onclick="logOut()">Log Out</button>
+    </div>
+  `;
+
+  el.onclick = (e) => {
+    if (e.target.closest('.profile-menu-item')) return;
+    document.getElementById('profile-menu').classList.toggle('open');
+  };
+
+  // Close menu on click outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.profile-badge')) {
+      document.getElementById('profile-menu')?.classList.remove('open');
+    }
+  });
+}
+
+function switchProfile() {
+  localStorage.removeItem('movetracker_activeprofile');
+  location.reload();
+}
+
+function logOut() {
+  localStorage.removeItem('movetracker_activeprofile');
+  localStorage.removeItem('movetracker_token');
+  location.reload();
+}
+
+// ── PIN Settings (Admin only) ──
+function openPinSettings() {
+  document.getElementById('profile-menu').classList.remove('open');
+
+  const overlay = document.createElement('div');
+  overlay.className = 'pin-modal-overlay';
+  overlay.id = 'pin-modal-overlay';
+
+  let html = '<div class="pin-modal"><h3>Manage PINs</h3><p>Change the PIN for any profile.</p>';
+  PROFILES.forEach(p => {
+    const currentPin = profilePins?.[p.id] || '1234';
+    html += `
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; justify-content: center;">
+        <div class="profile-badge-avatar" style="background: ${p.color}; width: 28px; height: 28px; font-size: 12px;">${p.initials}</div>
+        <span style="font-size: 13px; font-weight: 500; width: 60px; text-align: left;">${p.name}</span>
+        <input type="text" id="pin-edit-${p.id}" value="${currentPin}" maxlength="20" style="
+          width: 100px; padding: 6px 10px; font-family: 'DM Mono', monospace; font-size: 14px;
+          border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg);
+          color: var(--text); outline: none; text-align: center; letter-spacing: 0.1em;
+        ">
+      </div>
+    `;
+  });
+  html += `
+    <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: center;">
+      <button class="btn btn-primary" onclick="savePinSettings()">Save</button>
+      <button class="btn" style="background: var(--bg); color: var(--text); border: 1px solid var(--border);" onclick="closePinSettings()">Cancel</button>
+    </div>
+  </div>`;
+
+  overlay.innerHTML = html;
+  document.body.appendChild(overlay);
+}
+
+function savePinSettings() {
+  PROFILES.forEach(p => {
+    const input = document.getElementById(`pin-edit-${p.id}`);
+    if (input && input.value.trim()) {
+      profilePins[p.id] = input.value.trim();
+    }
+  });
+  savePins();
+  closePinSettings();
+}
+
+function closePinSettings() {
+  document.getElementById('pin-modal-overlay')?.remove();
+}
+
+// ── Init ──
+(async function init() {
+  renderProfilePicker();
+  await loadPins();
+
+  // Auto-login if profile is cached
+  const cachedProfile = localStorage.getItem('movetracker_activeprofile');
+  const cachedToken = localStorage.getItem('movetracker_token');
+  if (cachedProfile && cachedToken) {
+    authToken = cachedToken;
     useCloud = true;
-    startApp();
+    currentProfile = PROFILES.find(p => p.id === cachedProfile);
+    if (currentProfile) {
+      startApp();
+      return;
+    }
   }
 
-  // Handle enter key on password field
-  document.getElementById('login-password').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') doLogin();
+  // Check if first time setup needed
+  if (API_URL && !cachedToken) {
+    await doFirstTimeSetup();
+    await loadPins();
+  }
+
+  // Handle enter key on pin field
+  document.getElementById('pin-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') submitPin();
   });
 })();
 
@@ -2958,8 +3330,15 @@ function deleteFeedPost(idx) {
 
 // Restore saved name
 (function restoreFeedName() {
-  const saved = localStorage.getItem('movetracker_feedname');
-  if (saved) document.getElementById('feed-name').value = saved;
+  const feedNameEl = document.getElementById('feed-name');
+  if (!feedNameEl) return;
+  // Use profile name if available
+  if (currentProfile) {
+    feedNameEl.value = currentProfile.name;
+  } else {
+    const saved = localStorage.getItem('movetracker_feedname');
+    if (saved) feedNameEl.value = saved;
+  }
 })();
 
 // ── Notes ──
