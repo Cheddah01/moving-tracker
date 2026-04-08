@@ -687,6 +687,138 @@
 
   .feed-refresh-btn:hover { border-color: var(--text-tertiary); color: var(--text-secondary); }
 
+  /* ── Milestones ── */
+  .milestones {
+    margin-bottom: 32px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+
+  .milestones-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  .milestones-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-tertiary);
+  }
+
+  .milestones-add-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+    line-height: 1;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .milestones-add-btn:hover { border-color: var(--text-tertiary); color: var(--text); }
+
+  .milestone-form {
+    margin: 10px 0 6px;
+  }
+
+  .milestone-form-row {
+    display: flex;
+    gap: 6px;
+  }
+
+  .milestone-input {
+    flex: 1;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    min-width: 0;
+  }
+
+  .milestone-input:focus { border-color: var(--text); }
+
+  .milestone-icon-select {
+    font-size: 13px;
+    padding: 7px 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    outline: none;
+    cursor: pointer;
+  }
+
+  .milestone-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .milestone-item:last-child { border-bottom: none; }
+
+  .milestone-icon {
+    font-size: 15px;
+    line-height: 1.3;
+    min-width: 20px;
+    text-align: center;
+  }
+
+  .milestone-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .milestone-text {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.35;
+    color: var(--text);
+  }
+
+  .milestone-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text-tertiary);
+    margin-top: 1px;
+  }
+
+  .milestone-delete {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    font-size: 11px;
+    padding: 2px 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .milestone-item:hover .milestone-delete { opacity: 1; }
+  .milestone-delete:hover { color: var(--accent); }
+
+  .milestones-empty {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    padding: 4px 0;
+  }
+
   /* ── Animations ── */
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(6px); }
@@ -751,6 +883,32 @@
     <div class="header-route">YFB → YHZ</div>
     <h1>Move Tracker</h1>
     <div class="header-sub">Iqaluit to Halifax · July 2026</div>
+  </div>
+
+  <!-- Milestones -->
+  <div class="milestones fade-in" style="animation-delay: 0.03s" id="milestones-section">
+    <div class="milestones-header">
+      <div class="milestones-title">Milestones</div>
+      <button class="milestones-add-btn" onclick="toggleMilestoneForm()" id="milestone-toggle-btn">+</button>
+    </div>
+    <div class="milestone-form" id="milestone-form" style="display: none;">
+      <div class="milestone-form-row">
+        <input type="text" id="milestone-text" class="milestone-input" placeholder="e.g. Flight booked, Lease signed...">
+        <select id="milestone-icon" class="milestone-icon-select">
+          <option value="✈️">✈️ Flight</option>
+          <option value="🏠">🏠 Housing</option>
+          <option value="💼">💼 Job</option>
+          <option value="💰">💰 Money</option>
+          <option value="📦">📦 Packing</option>
+          <option value="📋">📋 Admin</option>
+          <option value="🎉">🎉 Milestone</option>
+          <option value="⚠️">⚠️ Alert</option>
+          <option value="📌">📌 Pinned</option>
+        </select>
+        <button class="btn btn-primary" onclick="addMilestone()">Add</button>
+      </div>
+    </div>
+    <div id="milestones-list"></div>
   </div>
 
   <!-- Countdown -->
@@ -1094,6 +1252,7 @@ async function startApp() {
   renderBudget();
   renderNotes();
   loadFeed();
+  loadMilestones();
 }
 
 // Auto-login if token is cached
@@ -1461,6 +1620,91 @@ function deleteBudgetEntry(idx) {
   saveState();
   renderBudget();
 }
+
+// ── Milestones ──
+let milestones = [];
+
+async function loadMilestones() {
+  if (useCloud && API_URL) {
+    const cloud = await cloudGet('milestones');
+    if (cloud !== null) milestones = cloud;
+  } else {
+    try {
+      const saved = localStorage.getItem('movetracker_milestones');
+      if (saved) milestones = JSON.parse(saved);
+    } catch(e) {}
+  }
+  renderMilestones();
+}
+
+function saveMilestones() {
+  localStorage.setItem('movetracker_milestones', JSON.stringify(milestones));
+  if (useCloud && API_URL) {
+    cloudPut('milestones', milestones);
+  }
+}
+
+function renderMilestones() {
+  const el = document.getElementById('milestones-list');
+  if (!el) return;
+  if (milestones.length === 0) {
+    el.innerHTML = '<div class="milestones-empty">No milestones yet. Add one to track key moments.</div>';
+    return;
+  }
+
+  el.innerHTML = [...milestones].reverse().map((m, idx) => {
+    const realIdx = milestones.length - 1 - idx;
+    const date = new Date(m.date);
+    const timeStr = date.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
+    const safeText = (m.text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    return `<div class="milestone-item">
+      <div class="milestone-icon">${m.icon || '📌'}</div>
+      <div class="milestone-content">
+        <div class="milestone-text">${safeText}</div>
+        <div class="milestone-date">${timeStr}</div>
+      </div>
+      <button class="milestone-delete" onclick="deleteMilestone(${realIdx})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function addMilestone() {
+  const text = document.getElementById('milestone-text').value.trim();
+  const icon = document.getElementById('milestone-icon').value;
+  if (!text) return;
+
+  milestones.push({ text, icon, date: new Date().toISOString() });
+  saveMilestones();
+  renderMilestones();
+  document.getElementById('milestone-text').value = '';
+  document.getElementById('milestone-form').style.display = 'none';
+  document.getElementById('milestone-toggle-btn').textContent = '+';
+}
+
+function deleteMilestone(idx) {
+  milestones.splice(idx, 1);
+  saveMilestones();
+  renderMilestones();
+}
+
+function toggleMilestoneForm() {
+  const form = document.getElementById('milestone-form');
+  const btn = document.getElementById('milestone-toggle-btn');
+  if (form.style.display === 'none') {
+    form.style.display = 'block';
+    btn.textContent = '−';
+    document.getElementById('milestone-text').focus();
+  } else {
+    form.style.display = 'none';
+    btn.textContent = '+';
+  }
+}
+
+// Enter key on milestone input
+document.getElementById('milestone-text')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') addMilestone();
+});
 
 // ── Feed ──
 let feedPosts = [];
