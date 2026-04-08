@@ -7,8 +7,8 @@ compatibility_date = "2024-01-01"
 # Then paste the id below.
 
 [[kv_namespaces]]
-binding = "MOVE_DATA"
-id = "<YOUR_KV_ID>"
+binding = "move-tracker-data"
+id = "9e1ca246cbc0476bacd053976af5b337"
 
 # Set your auth token as a secret (don't put it here):
 #   npx wrangler secret put AUTH_TOKEN
