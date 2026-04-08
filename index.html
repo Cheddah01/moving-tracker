@@ -247,15 +247,44 @@
   .task-item {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
+    gap: 10px;
     padding: 10px 0;
     border-bottom: 1px solid var(--border-light);
-    cursor: pointer;
-    transition: opacity 0.2s;
+    cursor: default;
+    transition: opacity 0.2s, background 0.15s;
+    margin: 0 -8px;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-radius: var(--radius);
+    position: relative;
   }
 
   .task-item:last-child { border-bottom: none; }
   .task-item.done { opacity: 0.4; }
+
+  .task-item.dragging {
+    opacity: 0.5;
+    background: var(--border-light);
+  }
+
+  .task-item.drag-over {
+    border-top: 2px solid var(--text);
+  }
+
+  .task-drag-handle {
+    cursor: grab;
+    color: var(--text-tertiary);
+    font-size: 11px;
+    padding: 2px 2px;
+    user-select: none;
+    opacity: 0.3;
+    transition: opacity 0.15s;
+    margin-top: 3px;
+    line-height: 1;
+  }
+
+  .task-item:hover .task-drag-handle { opacity: 0.8; }
+  .task-drag-handle:active { cursor: grabbing; }
 
   .task-check {
     width: 18px;
@@ -269,6 +298,7 @@
     justify-content: center;
     transition: all 0.15s;
     background: transparent;
+    cursor: pointer;
   }
 
   .task-item.done .task-check {
@@ -288,11 +318,27 @@
     line-height: 1.45;
     color: var(--text);
     flex: 1;
+    cursor: pointer;
+    min-width: 0;
   }
 
   .task-item.done .task-text {
     text-decoration: line-through;
     color: var(--text-tertiary);
+  }
+
+  .task-text-edit {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--text);
+    flex: 1;
+    min-width: 0;
+    padding: 2px 6px;
+    border: 1px solid var(--text);
+    border-radius: 3px;
+    background: var(--surface);
+    outline: none;
   }
 
   .task-priority {
@@ -304,37 +350,50 @@
     border-radius: 3px;
     white-space: nowrap;
     margin-top: 2px;
+    cursor: pointer;
+    transition: opacity 0.15s;
   }
+
+  .task-priority:hover { opacity: 0.7; }
 
   .priority-critical { background: var(--accent-soft); color: var(--accent); }
   .priority-high { background: var(--amber-soft); color: var(--amber); }
   .priority-medium { background: var(--green-soft); color: var(--green); }
   .priority-low { background: var(--border-light); color: var(--text-tertiary); }
 
-  .task-delete-btn {
+  .task-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .task-item:hover .task-actions { opacity: 1; }
+
+  .task-action-btn {
     background: none;
     border: none;
     color: var(--text-tertiary);
     cursor: pointer;
     font-size: 12px;
     padding: 2px 4px;
-    opacity: 0;
-    transition: opacity 0.15s;
-    margin-left: 4px;
+    transition: color 0.15s;
+    line-height: 1;
   }
 
-  .task-item:hover .task-delete-btn { opacity: 1; }
-  .task-delete-btn:hover { color: var(--accent); }
+  .task-action-btn:hover { color: var(--accent); }
 
-  .add-task-row {
+  .add-task-bar {
     display: flex;
     gap: 6px;
+    margin-bottom: 20px;
     flex-wrap: wrap;
   }
 
   .add-task-input {
     flex: 2;
-    min-width: 200px;
+    min-width: 160px;
     font-family: 'DM Sans', sans-serif;
     font-size: 13px;
     padding: 8px 12px;
@@ -647,6 +706,12 @@
     .budget-input-row input, .budget-input-row select { min-width: 100%; flex: 1 1 100%; }
     .budget-input-row .btn { width: 100%; }
     .nav-tab { padding: 10px 10px; font-size: 12px; }
+    .add-task-bar { flex-wrap: wrap; }
+    .add-task-bar .add-task-input { min-width: 100%; }
+    .add-task-bar .add-task-select { flex: 1; }
+    .add-task-bar .btn { flex: 0 0 auto; }
+    .task-actions { opacity: 1; }
+    .task-drag-handle { opacity: 0.5; }
   }
 </style>
 </head>
@@ -1107,10 +1172,25 @@ function renderPhaseSelector() {
 
 function renderPhaseContent() {
   const phase = PHASES[activePhase];
+
+  // Add task bar at top
   let html = `
     <div class="phase-header">
       <h2>${phase.title}</h2>
       <div class="phase-header-date">${phase.date}</div>
+    </div>
+    <div class="add-task-bar">
+      <input type="text" id="new-task-text" class="add-task-input" placeholder="Add a task...">
+      <select id="new-task-cat" class="add-task-select">
+        ${phase.categories.map((cat, i) => `<option value="${i}">${cat.name}</option>`).join('')}
+      </select>
+      <select id="new-task-priority" class="add-task-select">
+        <option value="critical">Critical</option>
+        <option value="high" selected>High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+      <button class="btn btn-primary" onclick="addTask()">Add</button>
     </div>
   `;
 
@@ -1118,40 +1198,32 @@ function renderPhaseContent() {
     html += `<div class="category-title">${cat.name}</div>`;
     cat.tasks.forEach((task, taskIdx) => {
       const done = taskState[task.id] || false;
+      const safeText = task.text.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
       html += `
-        <div class="task-item ${done ? 'done' : ''}">
+        <div class="task-item ${done ? 'done' : ''}" draggable="true"
+             ondragstart="onDragStart(event, ${activePhase}, ${catIdx}, ${taskIdx})"
+             ondragover="onDragOver(event)"
+             ondragenter="onDragEnter(event)"
+             ondragleave="onDragLeave(event)"
+             ondrop="onDrop(event, ${activePhase}, ${catIdx}, ${taskIdx})"
+             ondragend="onDragEnd(event)"
+             data-phase="${activePhase}" data-cat="${catIdx}" data-task="${taskIdx}">
+          <div class="task-drag-handle" title="Drag to reorder">⠿</div>
           <div class="task-check" onclick="toggleTask('${task.id}')">
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
               <path d="M2 5L4.2 7.5L8 2.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
-          <div class="task-text" onclick="toggleTask('${task.id}')">${task.text}</div>
-          <div class="task-priority priority-${task.priority}">${task.priority}</div>
-          <button class="task-delete-btn" onclick="event.stopPropagation(); removeTask(${activePhase}, ${catIdx}, ${taskIdx})">✕</button>
+          <div class="task-text" ondblclick="startEditTask(${activePhase}, ${catIdx}, ${taskIdx})" title="Double-click to edit">${task.text}</div>
+          <div class="task-priority priority-${task.priority}" onclick="cyclePriority(${activePhase}, ${catIdx}, ${taskIdx})" title="Click to change priority">${task.priority}</div>
+          <div class="task-actions">
+            <button class="task-action-btn" onclick="startEditTask(${activePhase}, ${catIdx}, ${taskIdx})" title="Edit">✎</button>
+            <button class="task-action-btn" onclick="removeTask(${activePhase}, ${catIdx}, ${taskIdx})" title="Delete">✕</button>
+          </div>
         </div>
       `;
     });
   });
-
-  // Add task form
-  html += `
-    <div class="add-task-area" style="margin-top: 24px;">
-      <div class="category-title">Add a task</div>
-      <div class="add-task-row">
-        <input type="text" id="new-task-text" class="add-task-input" placeholder="What needs to be done?">
-        <select id="new-task-cat" class="add-task-select">
-          ${phase.categories.map((cat, i) => `<option value="${i}">${cat.name}</option>`).join('')}
-        </select>
-        <select id="new-task-priority" class="add-task-select">
-          <option value="critical">Critical</option>
-          <option value="high" selected>High</option>
-          <option value="medium">Medium</option>
-          <option value="low">Low</option>
-        </select>
-        <button class="btn btn-primary" onclick="addTask()">Add</button>
-      </div>
-    </div>
-  `;
 
   document.getElementById('phase-content').innerHTML = html;
 
@@ -1163,6 +1235,8 @@ function renderPhaseContent() {
     });
   }
 }
+
+// ── Add / Remove / Edit Tasks ──
 
 function addTask() {
   const text = document.getElementById('new-task-text').value.trim();
@@ -1176,18 +1250,131 @@ function addTask() {
   renderPhaseContent();
   renderPhaseSelector();
   updateOverallProgress();
+  // Re-focus the input for quick consecutive adds
+  setTimeout(() => document.getElementById('new-task-text')?.focus(), 50);
 }
 
 function removeTask(phaseIdx, catIdx, taskIdx) {
   const task = PHASES[phaseIdx].categories[catIdx].tasks[taskIdx];
-  if (!confirm(`Remove "${task.text.substring(0, 50)}..."?`)) return;
-  // Clean up task state
+  if (!confirm(`Remove this task?`)) return;
   delete taskState[task.id];
   PHASES[phaseIdx].categories[catIdx].tasks.splice(taskIdx, 1);
   saveState();
   renderPhaseContent();
   renderPhaseSelector();
   updateOverallProgress();
+}
+
+function startEditTask(phaseIdx, catIdx, taskIdx) {
+  const task = PHASES[phaseIdx].categories[catIdx].tasks[taskIdx];
+  const items = document.querySelectorAll('.task-item');
+  let itemCount = 0;
+  // Find the right DOM element
+  for (const item of items) {
+    if (item.dataset.phase == phaseIdx && item.dataset.cat == catIdx && item.dataset.task == taskIdx) {
+      const textEl = item.querySelector('.task-text');
+      if (!textEl) return;
+
+      // Replace with input
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = task.text;
+      input.className = 'task-text-edit';
+
+      const finishEdit = () => {
+        const newText = input.value.trim();
+        if (newText && newText !== task.text) {
+          PHASES[phaseIdx].categories[catIdx].tasks[taskIdx].text = newText;
+          saveState();
+        }
+        renderPhaseContent();
+      };
+
+      input.addEventListener('blur', finishEdit);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+        if (e.key === 'Escape') { input.value = task.text; input.blur(); }
+      });
+
+      textEl.replaceWith(input);
+      input.focus();
+      input.select();
+      return;
+    }
+  }
+}
+
+const PRIORITY_ORDER = ['critical', 'high', 'medium', 'low'];
+
+function cyclePriority(phaseIdx, catIdx, taskIdx) {
+  const task = PHASES[phaseIdx].categories[catIdx].tasks[taskIdx];
+  const currentIdx = PRIORITY_ORDER.indexOf(task.priority);
+  const nextIdx = (currentIdx + 1) % PRIORITY_ORDER.length;
+  task.priority = PRIORITY_ORDER[nextIdx];
+  saveState();
+  renderPhaseContent();
+}
+
+// ── Drag & Drop Reorder ──
+
+let dragData = null;
+
+function onDragStart(e, phaseIdx, catIdx, taskIdx) {
+  dragData = { phaseIdx, catIdx, taskIdx };
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  // Needed for Firefox
+  e.dataTransfer.setData('text/plain', '');
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function onDragEnter(e) {
+  e.preventDefault();
+  const item = e.currentTarget;
+  if (item.classList.contains('task-item')) {
+    item.classList.add('drag-over');
+  }
+}
+
+function onDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function onDrop(e, phaseIdx, catIdx, taskIdx) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!dragData) return;
+
+  const from = dragData;
+  const to = { phaseIdx, catIdx, taskIdx };
+
+  // Only allow reorder within same category
+  if (from.phaseIdx !== to.phaseIdx || from.catIdx !== to.catIdx) {
+    // Moving between categories
+    const task = PHASES[from.phaseIdx].categories[from.catIdx].tasks.splice(from.taskIdx, 1)[0];
+    PHASES[to.phaseIdx].categories[to.catIdx].tasks.splice(to.taskIdx, 0, task);
+  } else if (from.taskIdx !== to.taskIdx) {
+    // Reorder within same category
+    const tasks = PHASES[from.phaseIdx].categories[from.catIdx].tasks;
+    const [moved] = tasks.splice(from.taskIdx, 1);
+    tasks.splice(to.taskIdx, 0, moved);
+  }
+
+  dragData = null;
+  saveState();
+  renderPhaseContent();
+  renderPhaseSelector();
+  updateOverallProgress();
+}
+
+function onDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+  dragData = null;
 }
 
 function setPhase(idx) {
