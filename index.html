@@ -964,6 +964,76 @@
     margin-bottom: 8px;
   }
 
+  .mb-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    margin-bottom: 8px;
+  }
+
+  .mb-section-header:first-child { margin-top: 0; }
+
+  .mb-add-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    width: 22px;
+    height: 22px;
+    font-size: 13px;
+    line-height: 1;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .mb-add-btn:hover { border-color: var(--text-tertiary); color: var(--text); }
+
+  .mb-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+  }
+
+  .mb-row-label {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text);
+    min-width: 0;
+    cursor: text;
+  }
+
+  .mb-row-label-edit {
+    flex: 1;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 2px 6px;
+    border: 1px solid var(--text);
+    border-radius: 3px;
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    min-width: 0;
+  }
+
+  .mb-row-delete {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    font-size: 11px;
+    padding: 2px 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .mb-row:hover .mb-row-delete { opacity: 1; }
+  .mb-row-delete:hover { color: var(--accent); }
+
   .pc-breakdown {
     margin-top: 4px;
   }
@@ -1258,69 +1328,8 @@
 
     <!-- MONTHLY BUDGET TAB -->
     <div class="budget-panel" id="btab-monthly">
-      <div class="calc-description">Your projected monthly cash flow in Halifax. Adjust the numbers to match your situation — net cash and 6-month outlook update automatically.</div>
-
-      <div class="monthly-section-title">Income</div>
-      <div class="calc-grid" id="mb-income-grid">
-        <div class="calc-row">
-          <label>Take-home pay (monthly)</label>
-          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input mb-input" id="mb-pay" value="2800"></div>
-        </div>
-        <div class="calc-row">
-          <label>Other income</label>
-          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input mb-input" id="mb-other-income" value="0"></div>
-        </div>
-      </div>
-
-      <div class="monthly-section-title" style="margin-top:16px;">Fixed Expenses</div>
-      <div class="calc-grid" id="mb-fixed-grid">
-        <div class="calc-row">
-          <label>Rent</label>
-          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input mb-input" id="mb-rent" value="1750"></div>
-        </div>
-        <div class="calc-row">
-          <label>Tenant insurance</label>
-          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input mb-input" id="mb-insurance" value="25"></div>
-        </div>
-        <div class="calc-row">
-          <label>Cell phone</label>
-          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input mb-input" id="mb-phone" value="60"></div>
-        </div>
-        <div class="calc-row">
-          <label>Internet</label>
-          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input mb-input" id="mb-internet" value="75"></div>
-        </div>
-        <div class="calc-row">
-          <label>Subscriptions (Netflix, Apple, etc.)</label>
-          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input mb-input" id="mb-subs" value="40"></div>
-        </div>
-      </div>
-
-      <div class="monthly-section-title" style="margin-top:16px;">Variable Expenses</div>
-      <div class="calc-grid" id="mb-variable-grid">
-        <div class="calc-row">
-          <label>Groceries</label>
-          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input mb-input" id="mb-groceries" value="400"></div>
-        </div>
-        <div class="calc-row">
-          <label>Takeout / dining</label>
-          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input mb-input" id="mb-takeout" value="150"></div>
-        </div>
-        <div class="calc-row">
-          <label>Transit / transportation</label>
-          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input mb-input" id="mb-transit" value="90"></div>
-        </div>
-        <div class="calc-row">
-          <label>Personal / misc</label>
-          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input mb-input" id="mb-personal" value="100"></div>
-        </div>
-        <div class="calc-row">
-          <label>Gaming / entertainment</label>
-          <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" class="calc-input mb-input" id="mb-gaming" value="50"></div>
-        </div>
-      </div>
-
-      <!-- Results -->
+      <div class="calc-description">Your projected monthly cash flow in Halifax. Add, remove, or adjust line items — everything recalculates automatically.</div>
+      <div id="mb-content"></div>
       <div id="mb-results" style="margin-top: 20px;"></div>
     </div>
 
@@ -1696,6 +1705,8 @@ async function startApp() {
   renderNotes();
   loadFeed();
   loadMilestones();
+  loadMonthlyData();
+  loadMonthlyFromCloud();
 }
 
 // Auto-login if token is cached
@@ -2071,51 +2082,181 @@ function switchBudgetTab(tab) {
   document.querySelectorAll('.budget-panel').forEach(p => p.classList.remove('active'));
   document.getElementById(`btab-${tab}`).classList.add('active');
 
+  if (tab === 'monthly') renderMonthly();
   if (tab === 'movecost') calcMoveCost();
   if (tab === 'paycheck') calcPaycheck();
   if (tab === 'monthly') calcMonthly();
 }
 
-// ── Monthly Budget Calculator ──
+// ── Monthly Budget Calculator (Dynamic) ──
+const DEFAULT_MONTHLY = {
+  income: [
+    { label: 'Take-home pay (monthly)', amount: 2800 },
+    { label: 'Other income', amount: 0 },
+  ],
+  fixed: [
+    { label: 'Rent', amount: 1750 },
+    { label: 'Tenant insurance', amount: 25 },
+    { label: 'Cell phone', amount: 60 },
+    { label: 'Internet', amount: 75 },
+    { label: 'Subscriptions', amount: 40 },
+  ],
+  variable: [
+    { label: 'Groceries', amount: 400 },
+    { label: 'Takeout / dining', amount: 150 },
+    { label: 'Transit', amount: 90 },
+    { label: 'Personal / misc', amount: 100 },
+    { label: 'Gaming / entertainment', amount: 50 },
+  ],
+};
+
+let monthlyData = null;
+
+function loadMonthlyData() {
+  // Try local first
+  try {
+    const saved = localStorage.getItem('movetracker_monthly');
+    if (saved) monthlyData = JSON.parse(saved);
+  } catch(e) {}
+
+  if (!monthlyData) monthlyData = JSON.parse(JSON.stringify(DEFAULT_MONTHLY));
+}
+
+function saveMonthlyData() {
+  localStorage.setItem('movetracker_monthly', JSON.stringify(monthlyData));
+  if (useCloud && API_URL) cloudPut('monthly', monthlyData);
+}
+
+async function loadMonthlyFromCloud() {
+  if (useCloud && API_URL) {
+    const cloud = await cloudGet('monthly');
+    if (cloud !== null) {
+      monthlyData = cloud;
+      localStorage.setItem('movetracker_monthly', JSON.stringify(monthlyData));
+    }
+  }
+}
+
+function renderMonthly() {
+  if (!monthlyData) loadMonthlyData();
+  const el = document.getElementById('mb-content');
+  if (!el) return;
+
+  const sections = [
+    { key: 'income', title: 'Income' },
+    { key: 'fixed', title: 'Fixed Expenses' },
+    { key: 'variable', title: 'Variable Expenses' },
+  ];
+
+  let html = '';
+  sections.forEach(sec => {
+    html += `
+      <div class="mb-section-header" ${sec.key === 'income' ? 'style="margin-top:0;"' : ''}>
+        <div class="monthly-section-title" style="margin:0;">${sec.title}</div>
+        <button class="mb-add-btn" onclick="addMonthlyRow('${sec.key}')" title="Add row">+</button>
+      </div>
+    `;
+    monthlyData[sec.key].forEach((item, idx) => {
+      const safeLabel = (item.label || '').replace(/"/g, '&quot;');
+      html += `
+        <div class="mb-row">
+          <div class="mb-row-label" ondblclick="editMonthlyLabel('${sec.key}', ${idx}, this)">${item.label}</div>
+          <div class="calc-input-wrap">
+            <span class="calc-dollar">$</span>
+            <input type="number" class="calc-input mb-input" value="${item.amount}" 
+                   onchange="updateMonthlyAmount('${sec.key}', ${idx}, this.value)"
+                   oninput="calcMonthly()">
+          </div>
+          <button class="mb-row-delete" onclick="removeMonthlyRow('${sec.key}', ${idx})" title="Remove">✕</button>
+        </div>
+      `;
+    });
+  });
+
+  el.innerHTML = html;
+  calcMonthly();
+}
+
+function addMonthlyRow(section) {
+  const label = prompt('Name for this line item:');
+  if (!label || !label.trim()) return;
+  monthlyData[section].push({ label: label.trim(), amount: 0 });
+  saveMonthlyData();
+  renderMonthly();
+}
+
+function removeMonthlyRow(section, idx) {
+  monthlyData[section].splice(idx, 1);
+  saveMonthlyData();
+  renderMonthly();
+}
+
+function updateMonthlyAmount(section, idx, value) {
+  monthlyData[section][idx].amount = parseFloat(value) || 0;
+  saveMonthlyData();
+}
+
+function editMonthlyLabel(section, idx, el) {
+  const current = monthlyData[section][idx].label;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = current;
+  input.className = 'mb-row-label-edit';
+
+  const finish = () => {
+    const newLabel = input.value.trim();
+    if (newLabel && newLabel !== current) {
+      monthlyData[section][idx].label = newLabel;
+      saveMonthlyData();
+    }
+    renderMonthly();
+  };
+
+  input.addEventListener('blur', finish);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { input.value = current; input.blur(); }
+  });
+
+  el.replaceWith(input);
+  input.focus();
+  input.select();
+}
+
 function calcMonthly() {
-  const val = (id) => parseFloat(document.getElementById(id)?.value) || 0;
+  if (!monthlyData) return;
 
-  const totalIncome = val('mb-pay') + val('mb-other-income');
-
-  const totalFixed = val('mb-rent') + val('mb-insurance') + val('mb-phone') +
-                     val('mb-internet') + val('mb-subs');
-
-  const totalVariable = val('mb-groceries') + val('mb-takeout') + val('mb-transit') +
-                        val('mb-personal') + val('mb-gaming');
+  let totalIncome = 0, totalFixed = 0, totalVariable = 0;
+  monthlyData.income.forEach(i => totalIncome += (i.amount || 0));
+  monthlyData.fixed.forEach(i => totalFixed += (i.amount || 0));
+  monthlyData.variable.forEach(i => totalVariable += (i.amount || 0));
 
   const totalExpenses = totalFixed + totalVariable;
   const netCash = totalIncome - totalExpenses;
   const isPositive = netCash >= 0;
-
   const fmt = (n) => '$' + Math.abs(Math.round(n)).toLocaleString('en-CA');
 
-  // 6-month projection
-  let projectionHtml = '';
-  const months = ['Month 1','Month 2','Month 3','Month 4','Month 5','Month 6'];
-  let cumulative = 0;
-
-  projectionHtml += '<div class="mb-projection">';
+  let projectionHtml = '<div class="mb-projection">';
   projectionHtml += '<div class="monthly-section-title" style="margin-top:0;">6-Month Outlook</div>';
   projectionHtml += '<div class="mb-proj-grid">';
-  months.forEach((label, i) => {
+  let cumulative = 0;
+  for (let i = 1; i <= 6; i++) {
     cumulative += netCash;
     const cumPos = cumulative >= 0;
     projectionHtml += `
       <div class="mb-proj-cell">
-        <div class="mb-proj-label">${label}</div>
+        <div class="mb-proj-label">Month ${i}</div>
         <div class="mb-proj-net ${isPositive ? 'positive' : 'negative'}">${isPositive ? '+' : '-'}${fmt(netCash)}</div>
         <div class="mb-proj-cum ${cumPos ? 'positive' : 'negative'}">${cumPos ? '' : '-'}${fmt(cumulative)}</div>
       </div>
     `;
-  });
+  }
   projectionHtml += '</div></div>';
 
-  document.getElementById('mb-results').innerHTML = `
+  const resultsEl = document.getElementById('mb-results');
+  if (!resultsEl) return;
+
+  resultsEl.innerHTML = `
     <div class="mb-summary-grid">
       <div class="mb-summary-card">
         <div class="mb-summary-label">Total Income</div>
@@ -2143,11 +2284,6 @@ function calcMonthly() {
     </div>
   `;
 }
-
-// Attach listeners for monthly budget inputs
-document.addEventListener('input', (e) => {
-  if (e.target.classList.contains('mb-input')) calcMonthly();
-});
 
 // ── Move Cost Estimator ──
 function calcMoveCost() {
