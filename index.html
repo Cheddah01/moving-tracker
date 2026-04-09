@@ -1535,6 +1535,143 @@
 
   .pin-modal input:focus { border-color: var(--text); }
 
+  /* ── Selling Tracker ── */
+  .sell-stats {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  .sell-stat-cell {
+    flex: 1;
+    background: var(--surface);
+    padding: 12px 8px;
+    text-align: center;
+  }
+
+  .sell-stat-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+
+  .sell-stat-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    font-weight: 500;
+  }
+
+  .sell-add-bar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .sell-input {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    min-width: 0;
+  }
+
+  .sell-input:focus { border-color: var(--text); }
+  .sell-input-item { flex: 1; min-width: 140px; }
+
+  .sell-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .sell-card:last-child { border-bottom: none; }
+
+  .sell-card-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .sell-card-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .sell-card-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text-tertiary);
+  }
+
+  .sell-card-price {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 65px;
+    text-align: right;
+  }
+
+  .sell-status-btns {
+    display: flex;
+    gap: 4px;
+  }
+
+  .sell-status-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 3px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .sell-status-btn:hover { border-color: var(--text-tertiary); }
+  .sell-status-btn.active { border-color: transparent; font-weight: 600; }
+
+  .sell-status-btn.active[data-s="listed"] { background: var(--amber-soft); color: var(--amber); }
+  .sell-status-btn.active[data-s="sold"] { background: var(--green-soft); color: var(--green); }
+  .sell-status-btn.active[data-s="keeping"] { background: #eff6ff; color: #2563eb; }
+
+  .sell-card-delete {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    font-size: 11px;
+    padding: 2px 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .sell-card:hover .sell-card-delete { opacity: 1; }
+  .sell-card-delete:hover { color: var(--accent); }
+
+  .sell-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-tertiary);
+    font-size: 13px;
+  }
+
   /* ── Animations ── */
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(6px); }
@@ -1684,6 +1821,7 @@
     <!-- Budget sub-nav -->
     <div class="budget-subnav">
       <button class="budget-tab active" data-btab="tracker" onclick="switchBudgetTab('tracker')">Tracker</button>
+      <button class="budget-tab" data-btab="selling" onclick="switchBudgetTab('selling')">Selling</button>
       <button class="budget-tab" data-btab="monthly" onclick="switchBudgetTab('monthly')">Monthly</button>
       <button class="budget-tab" data-btab="movecost" onclick="switchBudgetTab('movecost')">Move Cost</button>
       <button class="budget-tab" data-btab="paycheck" onclick="switchBudgetTab('paycheck')">Paycheck</button>
@@ -1702,6 +1840,17 @@
         <button class="btn btn-primary" onclick="addBudgetEntry()">Add</button>
       </div>
       <div id="budget-entries"></div>
+    </div>
+
+    <!-- SELLING TAB -->
+    <div class="budget-panel" id="btab-selling">
+      <div class="sell-stats" id="sell-stats"></div>
+      <div class="sell-add-bar">
+        <input type="text" id="sell-item" class="sell-input sell-input-item" placeholder="Item name">
+        <div class="calc-input-wrap"><span class="calc-dollar">$</span><input type="number" id="sell-price" class="calc-input" placeholder="Ask" style="width:70px;"></div>
+        <button class="btn btn-primary" onclick="addSellItem()">Add</button>
+      </div>
+      <div id="sell-list"></div>
     </div>
 
     <!-- MONTHLY BUDGET TAB -->
@@ -2194,6 +2343,7 @@ async function startApp() {
   loadMonthlyData();
   loadMonthlyFromCloud();
   loadJobs();
+  loadSellItems();
 }
 
 function renderProfileBadge() {
@@ -2670,11 +2820,149 @@ function switchBudgetTab(tab) {
   document.querySelectorAll('.budget-panel').forEach(p => p.classList.remove('active'));
   document.getElementById(`btab-${tab}`).classList.add('active');
 
+  if (tab === 'selling') renderSellItems();
   if (tab === 'monthly') renderMonthly();
   if (tab === 'movecost') calcMoveCost();
   if (tab === 'paycheck') calcPaycheck();
   if (tab === 'monthly') calcMonthly();
 }
+
+// ── Selling Tracker ──
+let sellItems = [];
+
+async function loadSellItems() {
+  try {
+    const saved = localStorage.getItem('movetracker_selling');
+    if (saved) sellItems = JSON.parse(saved);
+  } catch(e) {}
+
+  if (useCloud && API_URL) {
+    const cloud = await cloudGet('selling');
+    if (cloud !== null) {
+      sellItems = cloud;
+      localStorage.setItem('movetracker_selling', JSON.stringify(sellItems));
+    }
+  }
+  renderSellItems();
+}
+
+function saveSellItems() {
+  localStorage.setItem('movetracker_selling', JSON.stringify(sellItems));
+  if (useCloud && API_URL) cloudPut('selling', sellItems);
+}
+
+function renderSellItems() {
+  // Stats
+  let totalListed = 0, totalSold = 0, countListed = 0, countSold = 0;
+  sellItems.forEach(item => {
+    if (item.status === 'listed') { totalListed += (item.price || 0); countListed++; }
+    if (item.status === 'sold') { totalSold += (item.soldPrice ?? item.price ?? 0); countSold++; }
+  });
+
+  const fmt = (n) => '$' + Math.round(n).toLocaleString('en-CA');
+
+  const statsEl = document.getElementById('sell-stats');
+  if (statsEl) {
+    statsEl.innerHTML = `
+      <div class="sell-stat-cell">
+        <div class="sell-stat-num">${sellItems.length}</div>
+        <div class="sell-stat-label">Items</div>
+      </div>
+      <div class="sell-stat-cell">
+        <div class="sell-stat-num" style="color:var(--amber);">${fmt(totalListed)}</div>
+        <div class="sell-stat-label">Potential</div>
+      </div>
+      <div class="sell-stat-cell">
+        <div class="sell-stat-num" style="color:var(--green);">${fmt(totalSold)}</div>
+        <div class="sell-stat-label">Sold</div>
+      </div>
+      <div class="sell-stat-cell">
+        <div class="sell-stat-num" style="color:var(--green);">${fmt(totalListed + totalSold)}</div>
+        <div class="sell-stat-label">Total</div>
+      </div>
+    `;
+  }
+
+  const listEl = document.getElementById('sell-list');
+  if (!listEl) return;
+
+  if (sellItems.length === 0) {
+    listEl.innerHTML = '<div class="sell-empty">No items yet. Add stuff you want to sell before the move.</div>';
+    return;
+  }
+
+  // Sort: listed first, then sold, then keeping
+  const statusOrder = { listed: 0, sold: 1, keeping: 2 };
+  const sorted = [...sellItems].map((item, i) => ({ ...item, _idx: i }))
+    .sort((a, b) => (statusOrder[a.status] ?? 3) - (statusOrder[b.status] ?? 3));
+
+  listEl.innerHTML = sorted.map(item => {
+    const idx = item._idx;
+    const safeName = (item.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const statuses = ['listed', 'sold', 'keeping'];
+    const priceDisplay = item.status === 'sold'
+      ? `<span style="color:var(--green);">${fmt(item.soldPrice ?? item.price ?? 0)}</span>`
+      : `<span style="color:var(--amber);">${fmt(item.price || 0)}</span>`;
+
+    return `<div class="sell-card">
+      <div class="sell-card-info">
+        <div class="sell-card-name">${safeName}</div>
+        <div class="sell-status-btns">
+          ${statuses.map(s =>
+            `<button class="sell-status-btn ${item.status === s ? 'active' : ''}" data-s="${s}" onclick="setSellStatus(${idx}, '${s}')">${s}</button>`
+          ).join('')}
+        </div>
+      </div>
+      <div class="sell-card-price">${priceDisplay}</div>
+      <button class="sell-card-delete" onclick="deleteSellItem(${idx})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function addSellItem() {
+  const name = document.getElementById('sell-item').value.trim();
+  const price = parseFloat(document.getElementById('sell-price').value) || 0;
+  if (!name) return;
+
+  sellItems.push({
+    name,
+    price,
+    soldPrice: null,
+    status: 'listed',
+    date: new Date().toISOString(),
+  });
+  saveSellItems();
+  renderSellItems();
+
+  document.getElementById('sell-item').value = '';
+  document.getElementById('sell-price').value = '';
+  document.getElementById('sell-item').focus();
+}
+
+function deleteSellItem(idx) {
+  sellItems.splice(idx, 1);
+  saveSellItems();
+  renderSellItems();
+}
+
+function setSellStatus(idx, status) {
+  if (status === 'sold' && sellItems[idx].status !== 'sold') {
+    const got = prompt(`How much did you sell "${sellItems[idx].name}" for?`, sellItems[idx].price);
+    if (got === null) return;
+    sellItems[idx].soldPrice = parseFloat(got) || sellItems[idx].price;
+  }
+  sellItems[idx].status = status;
+  saveSellItems();
+  renderSellItems();
+}
+
+// Enter key for sell inputs
+document.getElementById('sell-price')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') addSellItem();
+});
+document.getElementById('sell-item')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('sell-price').focus();
+});
 
 // ── Monthly Budget Calculator (Dynamic) ──
 const DEFAULT_MONTHLY = {
